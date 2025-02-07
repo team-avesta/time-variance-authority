@@ -1,6 +1,6 @@
 # Time Variance Authority (TVA)
 
-![Time Variance Authority](timeVarianceAuthority.png)
+                                                                                          ![Time Variance Authority](timeVarianceAuthority.png)
 
 ## 📺 Introduction
 
