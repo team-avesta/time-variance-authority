@@ -1,49 +1,34 @@
 const moment = require("moment-timezone");
 const MonthlyAnalyzer = require("./analyzers/MonthlyAnalyzer");
 
+// Constants
+const IST_TIMEZONE = "Asia/Kolkata";
+const REQUIRED_HOURS = 8;
+const SUSPICIOUS_GAP_HOURS = 4;
+const SUSPICIOUS_DURATION_HOURS = 10;
+
 class TimeAnalyzer {
   constructor() {
-    this.IST_TIMEZONE = "Asia/Kolkata";
-    this.REQUIRED_HOURS = 8;
-    this.SUSPICIOUS_GAP_HOURS = 4;
-    this.SUSPICIOUS_DURATION_HOURS = 10;
     this.monthlyAnalyzer = new MonthlyAnalyzer();
   }
 
   analyzeEntries(entries, date) {
     if (!entries || entries.length === 0) {
-      return { totalHours: 0, suspiciousEntries: [] };
+      return {
+        totalHours: 0,
+        isMissing: true,
+        missingHours: REQUIRED_HOURS,
+        suspiciousEntries: null,
+      };
     }
 
-    const sortedEntries = [...entries].sort((a, b) =>
-      moment(a.start).diff(moment(b.start))
+    // Sort entries by start time
+    const sortedEntries = [...entries].sort(
+      (a, b) => moment(a.start).valueOf() - moment(b.start).valueOf()
     );
-    const suspiciousEntries = [];
+
     let totalHours = 0;
-
-    // Calculate total hours for entries
-    sortedEntries.forEach((entry) => {
-      const startMoment = moment.tz(entry.start, this.IST_TIMEZONE);
-      const endMoment = moment.tz(entry.end, this.IST_TIMEZONE);
-      const dayStart = moment.tz(date, this.IST_TIMEZONE).startOf("day");
-      const dayEnd = moment.tz(date, this.IST_TIMEZONE).endOf("day");
-
-      // If entry spans midnight, only count hours within the day
-      const effectiveStartMoment = startMoment.isBefore(dayStart)
-        ? dayStart
-        : startMoment;
-      const effectiveEndMoment = endMoment.isAfter(dayEnd) ? dayEnd : endMoment;
-      const duration = moment
-        .duration(effectiveEndMoment.diff(effectiveStartMoment))
-        .asHours();
-
-      if (duration > 0) {
-        totalHours += duration;
-      }
-    });
-
-    // Round total hours
-    totalHours = Math.round(totalHours);
+    let suspiciousEntries = [];
 
     // Debug log for entries analysis
     console.log("Analyzing entries:", {
@@ -71,8 +56,11 @@ class TimeAnalyzer {
         runningTotal: totalHours + duration,
       });
 
+      // Add to total hours
+      totalHours += duration;
+
       // Check for suspiciously long entries
-      if (duration > this.SUSPICIOUS_DURATION_HOURS) {
+      if (duration > SUSPICIOUS_DURATION_HOURS) {
         suspiciousEntries.push({
           type: "long_duration",
           entry,
@@ -87,7 +75,7 @@ class TimeAnalyzer {
         const prevEnd = moment(sortedEntries[index - 1].end);
         const gap = moment.duration(start.diff(prevEnd)).asHours();
 
-        if (gap > this.SUSPICIOUS_GAP_HOURS) {
+        if (gap > SUSPICIOUS_GAP_HOURS) {
           suspiciousEntries.push({
             type: "large_gap",
             before: sortedEntries[index - 1],
@@ -98,58 +86,37 @@ class TimeAnalyzer {
           });
         }
       }
-
-      // Check for overlapping entries
-      if (index > 0) {
-        const prevEnd = moment(sortedEntries[index - 1].end);
-        if (start.isBefore(prevEnd)) {
-          suspiciousEntries.push({
-            type: "overlap",
-            before: sortedEntries[index - 1],
-            after: entry,
-            overlapStart: start.format("HH:mm"),
-            overlapEnd: prevEnd.format("HH:mm"),
-          });
-        }
-      }
     });
 
-    // Check for insufficient hours only if no other suspicious entries
-    if (suspiciousEntries.length === 0 && totalHours < this.REQUIRED_HOURS) {
+    // Check for insufficient total hours (only if some hours were logged)
+    if (totalHours > 0 && totalHours < REQUIRED_HOURS) {
       suspiciousEntries.push({
         type: "insufficient_hours",
         totalHours,
-        missingHours: this.REQUIRED_HOURS - totalHours,
+        missingHours: REQUIRED_HOURS - totalHours,
       });
     }
 
     return {
       totalHours: Math.round(totalHours * 100) / 100,
-      isMissing: totalHours === 0,
-      missingHours: Math.max(0, this.REQUIRED_HOURS - totalHours),
+      isMissing: totalHours === 0, // Changed to only true when no hours logged
+      missingHours: Math.max(0, REQUIRED_HOURS - totalHours),
       suspiciousEntries:
         suspiciousEntries.length > 0 ? suspiciousEntries : null,
     };
   }
 
   calculateTotalHours(entries) {
-    return Math.round(
-      entries.reduce((total, entry) => {
-        const startMoment = moment.tz(entry.start, this.IST_TIMEZONE);
-        const endMoment = moment.tz(entry.end, this.IST_TIMEZONE);
-        const dayEnd = startMoment.clone().endOf("day");
+    if (!entries || entries.length === 0) {
+      return 0;
+    }
 
-        // If entry spans midnight, only count hours until midnight
-        const effectiveEndMoment = endMoment.isAfter(dayEnd)
-          ? dayEnd
-          : endMoment;
-        const duration = moment
-          .duration(effectiveEndMoment.diff(startMoment))
-          .asHours();
-
-        return total + duration;
-      }, 0)
-    );
+    return entries.reduce((total, entry) => {
+      const start = moment(entry.start);
+      const end = moment(entry.end);
+      const duration = moment.duration(end.diff(start));
+      return total + duration.asHours();
+    }, 0);
   }
 
   analyzeMonthlyEntries(entries, user) {
