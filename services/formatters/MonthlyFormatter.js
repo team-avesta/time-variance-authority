@@ -4,14 +4,11 @@ const BaseFormatter = require("./BaseFormatter");
 class MonthlyFormatter extends BaseFormatter {
   formatReport(results, monthDate, totalExpectedHours) {
     const blocks = [];
-    const monthStr = monthDate.format("MMMM YYYY");
-    const weekNumber = Math.ceil(moment().tz("Asia/Kolkata").date() / 7);
+    const monthStr = moment(monthDate).format("MMMM YYYY");
 
     // Add header
     blocks.push(
-      this.createHeaderBlock(
-        `📊 Time Entry Summary for ${monthStr} (Week ${weekNumber})`
-      )
+      this.createHeaderBlock(`📊 Time Entry Summary for ${monthStr}`)
     );
 
     // Add expected hours subtitle

@@ -26,30 +26,32 @@ exports.handler = async (event) => {
     let startTime, endTime, previousWorkday, weekNumber;
     if (isMonthlyReport) {
       // For monthly report, get data from start of month to current week
-      const now = moment().tz("Asia/Kolkata");
+      const now = event.testDate
+        ? moment(event.testDate).tz("Asia/Kolkata")
+        : moment().tz("Asia/Kolkata");
       startTime = now.clone().startOf("month");
 
       // Calculate week number (1-5) within the month
       weekNumber = Math.ceil(now.date() / 7);
 
-      // End time is the end of the current week, but not exceeding month end
+      // End time should be end of the current date to include all entries
       const monthEnd = now.clone().endOf("month");
-      const weekEnd = now.clone().endOf("isoWeek");
-      endTime = moment.min(monthEnd, weekEnd);
+      endTime = moment.min(monthEnd, now.clone().endOf("day"));
 
       // Calculate working days in this period
-      const holidays = (process.env.HOLIDAYS || "")
+      const holidays = (event.env?.HOLIDAYS || process.env.HOLIDAYS || "")
         .split(",")
         .map((d) => d.trim());
       const workingDays = getWorkingDaysCount(startTime, endTime, holidays);
 
-      console.log("Monthly report timing:", {
-        weekNumber,
-        monthStart: startTime.format(),
-        weekEnd: weekEnd.format(),
-        monthEnd: monthEnd.format(),
-        finalEndTime: endTime.format(),
+      console.log("Monthly report timing details:", {
+        testDate: event.testDate || "none",
+        startTimeIST: startTime.format("YYYY-MM-DD HH:mm:ss Z"),
+        endTimeIST: endTime.format("YYYY-MM-DD HH:mm:ss Z"),
+        startTimeUTC: startTime.utc().format("YYYY-MM-DD HH:mm:ss Z"),
+        endTimeUTC: endTime.utc().format("YYYY-MM-DD HH:mm:ss Z"),
         workingDays,
+        holidays,
       });
 
       previousWorkday = now;
@@ -179,15 +181,40 @@ exports.handler = async (event) => {
       const groupedResults = timeAnalyzer.groupByTeam(results, teams);
 
       // Calculate total expected hours for the period
-      const holidays = (process.env.HOLIDAYS || "")
+      const holidays = (event.env?.HOLIDAYS || process.env.HOLIDAYS || "")
         .split(",")
         .map((d) => d.trim());
-      const workingDays = getWorkingDaysCount(startTime, endTime, holidays);
+
+      // Use the same date object we used for calculations
+      const reportDate = event.testDate
+        ? moment(event.testDate).tz("Asia/Kolkata")
+        : moment().tz("Asia/Kolkata");
+
+      // Recalculate the date range for this month
+      const monthStart = reportDate.clone().startOf("month");
+      const monthEnd = reportDate.clone().endOf("month");
+      const currentDate = reportDate.clone();
+      const finalEndDate = moment.min(monthEnd, currentDate);
+
+      const workingDays = getWorkingDaysCount(
+        monthStart,
+        finalEndDate,
+        holidays
+      );
       const expectedHoursPerDay = 8; // Standard working hours per day
       const totalExpectedHours = workingDays * expectedHoursPerDay;
 
-      // Send monthly report to Slack with expected hours
-      await slack.notifyMonthly(groupedResults, startTime, totalExpectedHours);
+      console.log("Expected hours calculation:", {
+        reportMonth: reportDate.format("MMMM YYYY"),
+        startDate: monthStart.format("YYYY-MM-DD"),
+        endDate: finalEndDate.format("YYYY-MM-DD"),
+        holidays: holidays,
+        workingDays: workingDays,
+        totalExpectedHours: totalExpectedHours,
+      });
+
+      // Send monthly report to Slack with expected hours using the correct date
+      await slack.notifyMonthly(groupedResults, reportDate, totalExpectedHours);
     } else {
       // Send daily report to Slack
       await slack.notifyBulk(results, previousWorkday);
