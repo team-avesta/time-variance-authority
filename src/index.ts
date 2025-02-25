@@ -45,7 +45,7 @@ const userConfig = new UserConfig(process.env.USERS);
 export const handler = async (event: Event): Promise<APIGatewayProxyResult> => {
   try {
     console.log(
-      'Deployment test - Lambda executing: start',
+      'Deployment test - Lambda executing:',
       new Date().toISOString()
     );
     console.log('Event:', JSON.stringify(event));
