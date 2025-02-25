@@ -21,10 +21,25 @@ With automated updates delivered straight from the Clockify API to Slack, TVA he
 
 ### Architecture
 
-- AWS Lambda Functions
+- AWS Lambda Functions with TypeScript
 - Clockify API Integration
 - Slack Notifications
 - Node.js Runtime
+- TypeScript for Type Safety
+
+### Build and Deploy
+
+```bash
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# The compiled JavaScript will be in the dist/ directory
+# Zip the contents for AWS Lambda deployment
+npm run build && cd dist && zip -r ../lambda.zip . && cd .. && zip -r lambda.zip node_modules/
+```
 
 ### Scheduled Runs
 
