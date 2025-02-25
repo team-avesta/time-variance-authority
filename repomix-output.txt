@@ -47,9 +47,6 @@ Directory Structure
 ================================================================
 .repomix/
   bundles.json
-config/
-  UserConfig.js
-  users.json
 docs/
   rules/
     alert-rules.md
@@ -57,22 +54,29 @@ docs/
     time-rules.md
   technical/
     implementation-details.md
+    typescriptConversion.md
   templates/
     holiday-config-template.json
     user-config-template.json
-services/
-  analyzers/
-    BaseAnalyzer.js
-    MonthlyAnalyzer.js
-  formatters/
-    BaseFormatter.js
-    MonthlyFormatter.js
-  ClockifyClient.js
-  SlackNotifier.js
-  TimeAnalyzer.js
+src/
+  config/
+    UserConfig.ts
+    users.json
+  services/
+    analyzers/
+      BaseAnalyzer.ts
+      MonthlyAnalyzer.ts
+    formatters/
+      BaseFormatter.ts
+      MonthlyFormatter.ts
+    ClockifyClient.ts
+    SlackNotifier.ts
+    TimeAnalyzer.ts
+  index.ts
 .gitignore
-index.js
+package.json
 README.md
+tsconfig.json
 
 ================================================================
 Files
@@ -86,42 +90,646 @@ File: .repomix/bundles.json
 }
 
 ================
-File: config/UserConfig.js
+File: docs/rules/alert-rules.md
 ================
-const users = require("./users.json");
+# Alert Rules
+
+## 🚨 Alert Types
+
+### 1. Missing Hours Alert
+
+**Trigger Conditions:**
+
+- Total daily hours < 8 hours
+- Only on working days
+- Excludes holidays and weekends
+
+**Alert Format:**
+
+- User name and email
+- Total hours logged
+- Missing hours amount
+- Date of missing entries
+
+### 2. Suspicious Duration Alert
+
+**Trigger Conditions:**
+
+- Single time entry > 10 hours
+- Multiple entries in same time period
+- Overlapping time entries
+
+**Alert Format:**
+
+- Entry details (start/end time)
+- Duration of suspicious entry
+- Project and task information
+- User name and email
+
+### 3. Gap Alert
+
+**Trigger Conditions:**
+
+- Gap between entries > 4 hours
+- Only during working hours
+- Excludes lunch time gaps
+
+**Alert Format:**
+
+- Gap start and end time
+- Gap duration
+- Surrounding entry details
+- User name and email
+
+## 📊 Alert Grouping
+
+### Daily Report Grouping
+
+- Grouped by user
+- Sorted by team
+- All alert types included
+- Summary at top of report
+
+### Monthly Report Grouping
+
+- Grouped by team
+- Summary of alert patterns
+- Trend analysis
+- Team-wise statistics
+
+## 🔔 Notification Channels
+
+### Slack Notifications
+
+- Sent to configured Slack channel
+- Uses formatted blocks for readability
+- Includes direct links to Clockify
+- Mentions relevant team leads
+
+## 🎯 Alert Priority
+
+### High Priority
+
+- Missing entire day's entries
+- Multiple overlapping entries
+- Gaps > 8 hours
+
+### Medium Priority
+
+- Single missing hour alerts
+- Gaps between 4-8 hours
+- Long duration entries
+
+### Low Priority
+
+- Minor overlaps
+- Suspicious patterns
+- Non-standard hour distributions
+
+## 🔄 Alert Lifecycle
+
+### Generation
+
+1. Alert condition detected
+2. Alert data collected
+3. Priority assigned
+4. Notification formatted
+
+### Delivery
+
+1. Grouped with other alerts
+2. Formatted for channel
+3. Sent to Slack
+4. Delivery confirmed
+
+### Resolution
+
+- No explicit resolution required
+- Resolved by correcting time entries
+- New entries automatically validated
+
+## ⚙️ Configuration
+
+### Thresholds
+
+- Minimum daily hours: 8
+- Maximum single entry: 10 hours
+- Maximum gap: 4 hours
+- Overlap tolerance: 0 minutes
+
+### Timing
+
+- Daily check: 4:30 AM IST
+- Monthly check: 11:30 AM IST (Mondays)
+- Immediate alerts: None (batch processing only)
+
+## 🔄 Maintenance
+
+This document should be updated when:
+
+1. Alert thresholds change
+2. New alert types are added
+3. Alert format changes
+4. Notification channels are modified
+
+================
+File: docs/rules/holiday-rules.md
+================
+# Holiday Management Rules
+
+## 📅 Holiday Configuration
+
+### Format Requirements
+
+- Dates must be in `YYYY-MM-DD` format
+- Multiple dates are comma-separated
+- No spaces between dates in configuration
+- Example: `2025-03-14,2025-08-15,2025-10-02`
+
+### Configuration Location
+
+- Stored in Lambda environment variable: `HOLIDAYS`
+- Can be updated through AWS Lambda configuration
+- Changes take effect immediately after update
+
+## 🎯 Holiday Impact
+
+### Time Tracking
+
+- No time entries required on holidays
+- Holiday dates are excluded from:
+  - Daily checks
+  - Working days calculations
+  - Missing hours alerts
+
+### Reporting
+
+- Holidays are skipped in daily reports
+- Monthly reports account for holidays in total hour calculations
+- Previous working day calculations skip holidays
+
+## 🔄 Holiday Update Process
+
+### Adding New Holidays
+
+1. Format new holiday dates in `YYYY-MM-DD`
+2. Append to existing holiday list with comma
+3. Update Lambda environment variable
+4. No deployment needed - takes effect immediately
+
+### Removing Holidays
+
+1. Remove date from comma-separated list
+2. Ensure no trailing/leading commas
+3. Update Lambda environment variable
+4. Takes effect immediately
+
+## ⚠️ Important Considerations
+
+### Timezone
+
+- All holiday dates are considered in IST (Asia/Kolkata)
+- Holiday period is full day (00:00 to 23:59 IST)
+
+### Validation
+
+- Invalid date formats will be ignored
+- Duplicate dates are automatically handled
+- Weekend holidays should still be included for clarity
+
+## 📝 Current Holiday List (2025)
+
+- March 14, 2025 (Friday)
+- August 9, 2025 (Saturday)
+- August 15, 2025 (Friday)
+- August 16, 2025 (Saturday)
+- October 2, 2025 (Thursday)
+
+## 🔄 Maintenance
+
+This document should be updated when:
+
+1. New holidays are added
+2. Holiday dates change
+3. Holiday handling logic changes
+4. Date format requirements change
+
+================
+File: docs/rules/time-rules.md
+================
+# Time Tracking Rules
+
+## ⏰ Daily Time Requirements
+
+### Required Hours
+
+- **Minimum Hours**: 8 hours per working day
+- **Working Hours**: Standard working hours are tracked in IST (Asia/Kolkata timezone)
+- **Grace Period**: None (entries must be logged for the correct day)
+
+### Time Entry Thresholds
+
+- **Maximum Single Entry**: 10 hours (entries exceeding this are flagged)
+- **Maximum Gap**: 4 hours (gaps between entries exceeding this are flagged)
+- **Minimum Entry Duration**: No minimum (but should be meaningful)
+
+## 🚨 Alert Conditions
+
+### Missing Hours Alert
+
+- Triggered when total daily hours < 8 hours
+- Calculated at the end of each working day
+- Reported in the next day's morning report
+
+### Suspicious Entry Alert
+
+Triggered for:
+
+- Single entries > 10 hours
+- Gaps between entries > 4 hours
+- Overlapping time entries
+- Multiple entries in same time period
+
+## 📅 Working Day Definition
+
+### Standard Working Days
+
+- Monday through Friday
+- Excluding weekends (Saturday and Sunday)
+- Excluding configured holidays
+
+### Time Calculation
+
+- Time is calculated in hours with two decimal places
+- Entries are considered in IST (Asia/Kolkata) timezone
+- Daily totals are calculated from 00:00 to 23:59 IST
+
+## 🔄 Update Process
+
+These rules should be updated when:
+
+1. Time requirements change
+2. Alert thresholds are modified
+3. Working day definitions change
+4. Timezone requirements change
+
+## 📊 Reporting Schedule
+
+### Daily Reports
+
+- Run at 4:30 AM IST (Mon-Fri)
+- Checks previous working day's entries
+- Sent to configured Slack channel
+
+### Monthly Reports
+
+- Run at 11:30 AM IST (Every Monday)
+- Summarizes current month's data
+- Groups data by teams
+- Includes all users regardless of daily check settings
+
+================
+File: docs/technical/implementation-details.md
+================
+# Implementation Details
+
+## 🔄 Rate Limiting
+
+### Clockify API
+
+- Requests are queued with 50ms delay between requests
+- Batch processing of users (5 users per batch)
+- 1-second delay between batches
+- Auto-retry on rate limit (429) responses
+
+## 📊 Data Processing
+
+### Time Calculations
+
+- All times are stored in UTC
+- All business logic uses IST (Asia/Kolkata)
+- Hours are rounded to 2 decimal places
+- Time entries are sorted chronologically for analysis
+
+### Pagination
+
+- Time entries are fetched in pages of 50
+- Automatic handling of multiple pages
+- Continues until no more entries are found
+
+## 👥 User Management
+
+### User Configuration
+
+- Stored in `users.json`
+- Each user has:
+  - `id`: Clockify user ID
+  - `name`: Display name
+  - `email`: Email address
+  - `checkEnabled`: Whether to include in daily checks
+  - `requiredHours`: Daily hours requirement (default: 8)
+  - `notifySlack`: Whether to send Slack notifications
+  - `team`: Team assignment
+
+### Team Structure
+
+- teamAlpha
+- teamBravo
+- teamCharlie
+- teamDelta
+- teamMobileApp
+- teamZenuProject
+- teamInfra
+- teamDataAndAnalytics
+
+## 🔔 Notification System
+
+### Slack Message Formatting
+
+- Uses Slack Block Kit for rich formatting
+- Team-specific emojis for visual distinction
+- Hierarchical organization (Team → Member → Details)
+- Timestamps in IST format
+
+### Alert Types
+
+1. Individual Notifications
+
+   - Direct messages for personal time issues
+   - Includes specific entry details
+   - Links to Clockify entries
+
+2. Daily Summary
+
+   - Grouped by team
+   - Missing entries section
+   - Suspicious entries section
+   - Generated at 4:30 AM IST
+
+3. Monthly Report
+   - Team-wise grouping
+   - Total hours comparison
+   - Progress tracking
+   - Generated at 11:30 AM IST (Mondays)
+
+## ⚙️ Error Handling
+
+### API Errors
+
+- Automatic retry on rate limits
+- Error logging with context
+- Graceful degradation on partial failures
+- Batch isolation (single user failure doesn't affect others)
+
+### Data Validation
+
+- Invalid date format handling
+- Missing entry detection
+- Duplicate entry checking
+- Timezone conversion safety
+
+## 🔄 Process Flow
+
+### Daily Check
+
+1. Get previous working day
+2. Fetch enabled users
+3. Process in batches
+4. Analyze time entries
+5. Send notifications
+
+### Monthly Check
+
+1. Calculate month range
+2. Fetch all users
+3. Process in batches
+4. Group by teams
+5. Calculate expected hours
+6. Send monthly report
+
+================
+File: docs/technical/typescriptConversion.md
+================
+# TypeScript Conversion Todo Checklist
+
+## 1. Setup and Environment
+
+- [x] **Create `tsconfig.json`**
+  - Target: ES2019 (or later)
+  - Module: CommonJS
+  - Enable strict type checking (`"strict": true`)
+  - Set `"esModuleInterop": true`
+  - Specify `"outDir": "./dist"`
+  - Enable `"sourceMap": true`
+- [x] **Update `package.json` Scripts**
+  - Add `"build": "tsc"`
+  - Add `"start": "ts-node index.ts"` (or another appropriate command for local testing)
+- [x] **Install Dependencies**
+  - Install TypeScript and ts-node:  
+    `npm install --save-dev typescript ts-node`
+  - Install Node.js type definitions:  
+    `npm install --save-dev @types/node`
+  - Install other necessary packages (e.g., axios, moment)  
+    _(Skip adding extra type definitions for Slack if you don't want them)_
+
+## 2. Convert Configuration Files
+
+- [x] **Convert `config/UserConfig.js` to TypeScript**
+  - Rename file to `UserConfig.ts`
+  - Define minimal interfaces/types for the User object (e.g., `IUser`) if desired, or use basic types
+  - Ensure proper import of the JSON file (`users.json`)
+- [x] **Verify `config/users.json`**
+  - Confirm that it remains unchanged and is correctly referenced
+
+## 3. Convert Service Modules
+
+### 3.1 Analyzers
+
+- [x] **Convert `services/analyzers/BaseAnalyzer.js` to `BaseAnalyzer.ts`**
+  - Add type annotations for method parameters and return types
+  - Define types for any structured data where needed
+- [x] **Convert `services/analyzers/MonthlyAnalyzer.js` to `MonthlyAnalyzer.ts`**
+  - Import `BaseAnalyzer.ts` correctly
+  - Add type annotations for functions like `analyzeEntries` and `groupByTeam`
+  - Define types for analysis results and team groupings as necessary
+
+### 3.2 Formatters
+
+- [x] **Convert `services/formatters/BaseFormatter.js` to `BaseFormatter.ts`**
+  - Add type annotations for methods creating Slack block elements
+  - For Slack objects, feel free to use `any` (or minimal types) if you prefer not to add extra type definitions
+- [x] **Convert `services/formatters/MonthlyFormatter.js` to `MonthlyFormatter.ts`**
+  - Import `BaseFormatter.ts` correctly
+  - Add type annotations for functions like `formatReport` and `getTeamEmoji`
+  - Use minimal types (or `any`) for Slack message blocks to keep things simple
+
+### 3.3 Clients and Notifiers
+
+- [x] **Convert `services/ClockifyClient.js` to `ClockifyClient.ts`**
+  - Use axios type definitions for HTTP requests
+  - Annotate the request queue, rate limiting logic, and API responses
+  - Define clear return types for methods like `getWorkspaces`, `getUserInfo`, and `getTimeEntries`
+- [x] **Convert `services/SlackNotifier.js` to `SlackNotifier.ts`**
+  - Import Slack WebClient from `@slack/web-api` and use its built-in types, or fallback to `any` if you prefer
+  - Add type annotations to methods like `notifyChannel`, `notifyBulk`, and `notifyMonthly`
+  - For Slack message blocks, using `any` is acceptable to avoid extra type definitions
+
+### 3.4 Time Analyzer
+
+- [x] **Convert `services/TimeAnalyzer.js` to `TimeAnalyzer.ts`**
+  - Import and use `MonthlyAnalyzer.ts` with proper types
+  - Add type annotations for functions analyzing time entries and calculating totals
+  - Define types for input entries and analysis results where it makes sense
+
+## 4. Convert the Entry Point
+
+- [x] **Convert `index.js` to `index.ts`**
+  - Update the Lambda handler to use appropriate TypeScript types for the event and context objects
+  - Update all module imports to reference the new `.ts` files
+  - Ensure that the logic for processing daily and monthly reports remains unchanged
+
+## 5. Integration and Wiring
+
+- [x] **Update Import Paths**
+  - Verify that all paths are updated to reference the new TypeScript files
+- [x] **Build the Project**
+  - Run `npm run build` (or `tsc`) to compile the project
+  - Resolve any type errors or issues that arise during compilation
+
+## 6. Testing and Verification
+
+- [ ] **Module-Level Testing**
+  - Test each converted module individually to ensure functionality
+- [ ] **Integration Testing**
+  - Use local testing tools (e.g., ts-lambda-local-dev) to run the Lambda handler
+  - Verify that Slack notifications (daily and monthly reports) work as expected
+  - Compare outputs with known working versions to catch any regressions
+- [ ] **Full System Run**
+  - Run the complete project end-to-end to confirm that all modules work together
+
+## 7. Documentation and Final Cleanup
+
+- [x] **Update Documentation**
+  - Modify README and any other documentation to reflect the new TypeScript setup
+- [x] **Code Cleanup**
+  - Remove any unused JavaScript files that have been converted
+  - Ensure that all changes are committed with clear commit messages
+- [x] **Final Verification**
+  - Confirm that there is no orphaned code and that all functionality is integrated and working as expected
+
+================
+File: docs/templates/holiday-config-template.json
+================
+{
+  "holidays": [
+    {
+      "date": "2025-03-14",
+      "description": "Holiday Name",
+      "type": "public"
+    },
+    {
+      "date": "2025-08-09",
+      "description": "Holiday Name",
+      "type": "public"
+    },
+    {
+      "date": "2025-08-15",
+      "description": "Holiday Name",
+      "type": "public"
+    },
+    {
+      "date": "2025-08-16",
+      "description": "Holiday Name",
+      "type": "public"
+    },
+    {
+      "date": "2025-10-02",
+      "description": "Holiday Name",
+      "type": "public"
+    }
+  ],
+  "format": {
+    "dateFormat": "YYYY-MM-DD",
+    "timezone": "Asia/Kolkata",
+    "types": ["public", "company", "optional"],
+    "envFormat": "comma-separated dates only"
+  },
+  "examples": {
+    "envVariable": "2025-03-14,2025-08-09,2025-08-15,2025-08-16,2025-10-02",
+    "notes": [
+      "Dates must be in YYYY-MM-DD format",
+      "No spaces between dates in env variable",
+      "Include weekend holidays for clarity",
+      "All dates are considered in IST timezone"
+    ]
+  }
+}
+
+================
+File: docs/templates/user-config-template.json
+================
+
+
+================
+File: src/config/UserConfig.ts
+================
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  team: string;
+  checkEnabled: boolean;
+}
+
+interface Teams {
+  [key: string]: {
+    name: string;
+    emoji?: string;
+  };
+}
+
+interface UserData {
+  users: User[];
+  teams: Teams;
+}
 
 class UserConfig {
-  constructor(usersEnv) {
-    const data = usersEnv ? JSON.parse(usersEnv) : users;
+  private users: User[];
+  private teams: Teams;
+
+  constructor(usersEnv?: string) {
+    const data: UserData = usersEnv
+      ? JSON.parse(usersEnv)
+      : require("./users.json");
     this.users = data.users || [];
     this.teams = data.teams || {};
   }
 
-  getAllUsers() {
+  getAllUsers(): User[] {
     return this.users;
   }
 
-  getEnabledUsers() {
+  getEnabledUsers(): User[] {
     return this.users.filter((user) => user.checkEnabled);
   }
 
-  getUserById(id) {
+  getUserById(id: string): User | undefined {
     return this.users.find((user) => user.id === id);
   }
 
-  getUsersByTeam(team) {
+  getUsersByTeam(team: string): User[] {
     return this.users.filter((user) => user.team === team);
   }
 
-  getTeams() {
+  getTeams(): Teams {
     return this.teams;
   }
 }
 
-module.exports = UserConfig;
+export default UserConfig;
 
 ================
-File: config/users.json
+File: src/config/users.json
 ================
 {
     "users": [
@@ -578,487 +1186,26 @@ File: config/users.json
   }
 
 ================
-File: docs/rules/alert-rules.md
+File: src/services/analyzers/BaseAnalyzer.ts
 ================
-# Alert Rules
-
-## 🚨 Alert Types
-
-### 1. Missing Hours Alert
-
-**Trigger Conditions:**
-
-- Total daily hours < 8 hours
-- Only on working days
-- Excludes holidays and weekends
-
-**Alert Format:**
-
-- User name and email
-- Total hours logged
-- Missing hours amount
-- Date of missing entries
-
-### 2. Suspicious Duration Alert
-
-**Trigger Conditions:**
-
-- Single time entry > 10 hours
-- Multiple entries in same time period
-- Overlapping time entries
-
-**Alert Format:**
-
-- Entry details (start/end time)
-- Duration of suspicious entry
-- Project and task information
-- User name and email
-
-### 3. Gap Alert
-
-**Trigger Conditions:**
-
-- Gap between entries > 4 hours
-- Only during working hours
-- Excludes lunch time gaps
-
-**Alert Format:**
-
-- Gap start and end time
-- Gap duration
-- Surrounding entry details
-- User name and email
-
-## 📊 Alert Grouping
-
-### Daily Report Grouping
-
-- Grouped by user
-- Sorted by team
-- All alert types included
-- Summary at top of report
-
-### Monthly Report Grouping
-
-- Grouped by team
-- Summary of alert patterns
-- Trend analysis
-- Team-wise statistics
-
-## 🔔 Notification Channels
-
-### Slack Notifications
-
-- Sent to configured Slack channel
-- Uses formatted blocks for readability
-- Includes direct links to Clockify
-- Mentions relevant team leads
-
-## 🎯 Alert Priority
-
-### High Priority
-
-- Missing entire day's entries
-- Multiple overlapping entries
-- Gaps > 8 hours
-
-### Medium Priority
-
-- Single missing hour alerts
-- Gaps between 4-8 hours
-- Long duration entries
-
-### Low Priority
-
-- Minor overlaps
-- Suspicious patterns
-- Non-standard hour distributions
-
-## 🔄 Alert Lifecycle
-
-### Generation
-
-1. Alert condition detected
-2. Alert data collected
-3. Priority assigned
-4. Notification formatted
-
-### Delivery
-
-1. Grouped with other alerts
-2. Formatted for channel
-3. Sent to Slack
-4. Delivery confirmed
-
-### Resolution
-
-- No explicit resolution required
-- Resolved by correcting time entries
-- New entries automatically validated
-
-## ⚙️ Configuration
-
-### Thresholds
-
-- Minimum daily hours: 8
-- Maximum single entry: 10 hours
-- Maximum gap: 4 hours
-- Overlap tolerance: 0 minutes
-
-### Timing
-
-- Daily check: 4:30 AM IST
-- Monthly check: 11:30 AM IST (Mondays)
-- Immediate alerts: None (batch processing only)
-
-## 🔄 Maintenance
-
-This document should be updated when:
-
-1. Alert thresholds change
-2. New alert types are added
-3. Alert format changes
-4. Notification channels are modified
-
-================
-File: docs/rules/holiday-rules.md
-================
-# Holiday Management Rules
-
-## 📅 Holiday Configuration
-
-### Format Requirements
-
-- Dates must be in `YYYY-MM-DD` format
-- Multiple dates are comma-separated
-- No spaces between dates in configuration
-- Example: `2025-03-14,2025-08-15,2025-10-02`
-
-### Configuration Location
-
-- Stored in Lambda environment variable: `HOLIDAYS`
-- Can be updated through AWS Lambda configuration
-- Changes take effect immediately after update
-
-## 🎯 Holiday Impact
-
-### Time Tracking
-
-- No time entries required on holidays
-- Holiday dates are excluded from:
-  - Daily checks
-  - Working days calculations
-  - Missing hours alerts
-
-### Reporting
-
-- Holidays are skipped in daily reports
-- Monthly reports account for holidays in total hour calculations
-- Previous working day calculations skip holidays
-
-## 🔄 Holiday Update Process
-
-### Adding New Holidays
-
-1. Format new holiday dates in `YYYY-MM-DD`
-2. Append to existing holiday list with comma
-3. Update Lambda environment variable
-4. No deployment needed - takes effect immediately
-
-### Removing Holidays
-
-1. Remove date from comma-separated list
-2. Ensure no trailing/leading commas
-3. Update Lambda environment variable
-4. Takes effect immediately
-
-## ⚠️ Important Considerations
-
-### Timezone
-
-- All holiday dates are considered in IST (Asia/Kolkata)
-- Holiday period is full day (00:00 to 23:59 IST)
-
-### Validation
-
-- Invalid date formats will be ignored
-- Duplicate dates are automatically handled
-- Weekend holidays should still be included for clarity
-
-## 📝 Current Holiday List (2025)
-
-- March 14, 2025 (Friday)
-- August 9, 2025 (Saturday)
-- August 15, 2025 (Friday)
-- August 16, 2025 (Saturday)
-- October 2, 2025 (Thursday)
-
-## 🔄 Maintenance
-
-This document should be updated when:
-
-1. New holidays are added
-2. Holiday dates change
-3. Holiday handling logic changes
-4. Date format requirements change
-
-================
-File: docs/rules/time-rules.md
-================
-# Time Tracking Rules
-
-## ⏰ Daily Time Requirements
-
-### Required Hours
-
-- **Minimum Hours**: 8 hours per working day
-- **Working Hours**: Standard working hours are tracked in IST (Asia/Kolkata timezone)
-- **Grace Period**: None (entries must be logged for the correct day)
-
-### Time Entry Thresholds
-
-- **Maximum Single Entry**: 10 hours (entries exceeding this are flagged)
-- **Maximum Gap**: 4 hours (gaps between entries exceeding this are flagged)
-- **Minimum Entry Duration**: No minimum (but should be meaningful)
-
-## 🚨 Alert Conditions
-
-### Missing Hours Alert
-
-- Triggered when total daily hours < 8 hours
-- Calculated at the end of each working day
-- Reported in the next day's morning report
-
-### Suspicious Entry Alert
-
-Triggered for:
-
-- Single entries > 10 hours
-- Gaps between entries > 4 hours
-- Overlapping time entries
-- Multiple entries in same time period
-
-## 📅 Working Day Definition
-
-### Standard Working Days
-
-- Monday through Friday
-- Excluding weekends (Saturday and Sunday)
-- Excluding configured holidays
-
-### Time Calculation
-
-- Time is calculated in hours with two decimal places
-- Entries are considered in IST (Asia/Kolkata) timezone
-- Daily totals are calculated from 00:00 to 23:59 IST
-
-## 🔄 Update Process
-
-These rules should be updated when:
-
-1. Time requirements change
-2. Alert thresholds are modified
-3. Working day definitions change
-4. Timezone requirements change
-
-## 📊 Reporting Schedule
-
-### Daily Reports
-
-- Run at 4:30 AM IST (Mon-Fri)
-- Checks previous working day's entries
-- Sent to configured Slack channel
-
-### Monthly Reports
-
-- Run at 11:30 AM IST (Every Monday)
-- Summarizes current month's data
-- Groups data by teams
-- Includes all users regardless of daily check settings
-
-================
-File: docs/technical/implementation-details.md
-================
-# Implementation Details
-
-## 🔄 Rate Limiting
-
-### Clockify API
-
-- Requests are queued with 50ms delay between requests
-- Batch processing of users (5 users per batch)
-- 1-second delay between batches
-- Auto-retry on rate limit (429) responses
-
-## 📊 Data Processing
-
-### Time Calculations
-
-- All times are stored in UTC
-- All business logic uses IST (Asia/Kolkata)
-- Hours are rounded to 2 decimal places
-- Time entries are sorted chronologically for analysis
-
-### Pagination
-
-- Time entries are fetched in pages of 50
-- Automatic handling of multiple pages
-- Continues until no more entries are found
-
-## 👥 User Management
-
-### User Configuration
-
-- Stored in `users.json`
-- Each user has:
-  - `id`: Clockify user ID
-  - `name`: Display name
-  - `email`: Email address
-  - `checkEnabled`: Whether to include in daily checks
-  - `requiredHours`: Daily hours requirement (default: 8)
-  - `notifySlack`: Whether to send Slack notifications
-  - `team`: Team assignment
-
-### Team Structure
-
-- teamAlpha
-- teamBravo
-- teamCharlie
-- teamDelta
-- teamMobileApp
-- teamZenuProject
-- teamInfra
-- teamDataAndAnalytics
-
-## 🔔 Notification System
-
-### Slack Message Formatting
-
-- Uses Slack Block Kit for rich formatting
-- Team-specific emojis for visual distinction
-- Hierarchical organization (Team → Member → Details)
-- Timestamps in IST format
-
-### Alert Types
-
-1. Individual Notifications
-
-   - Direct messages for personal time issues
-   - Includes specific entry details
-   - Links to Clockify entries
-
-2. Daily Summary
-
-   - Grouped by team
-   - Missing entries section
-   - Suspicious entries section
-   - Generated at 4:30 AM IST
-
-3. Monthly Report
-   - Team-wise grouping
-   - Total hours comparison
-   - Progress tracking
-   - Generated at 11:30 AM IST (Mondays)
-
-## ⚙️ Error Handling
-
-### API Errors
-
-- Automatic retry on rate limits
-- Error logging with context
-- Graceful degradation on partial failures
-- Batch isolation (single user failure doesn't affect others)
-
-### Data Validation
-
-- Invalid date format handling
-- Missing entry detection
-- Duplicate entry checking
-- Timezone conversion safety
-
-## 🔄 Process Flow
-
-### Daily Check
-
-1. Get previous working day
-2. Fetch enabled users
-3. Process in batches
-4. Analyze time entries
-5. Send notifications
-
-### Monthly Check
-
-1. Calculate month range
-2. Fetch all users
-3. Process in batches
-4. Group by teams
-5. Calculate expected hours
-6. Send monthly report
-
-================
-File: docs/templates/holiday-config-template.json
-================
-{
-  "holidays": [
-    {
-      "date": "2025-03-14",
-      "description": "Holiday Name",
-      "type": "public"
-    },
-    {
-      "date": "2025-08-09",
-      "description": "Holiday Name",
-      "type": "public"
-    },
-    {
-      "date": "2025-08-15",
-      "description": "Holiday Name",
-      "type": "public"
-    },
-    {
-      "date": "2025-08-16",
-      "description": "Holiday Name",
-      "type": "public"
-    },
-    {
-      "date": "2025-10-02",
-      "description": "Holiday Name",
-      "type": "public"
-    }
-  ],
-  "format": {
-    "dateFormat": "YYYY-MM-DD",
-    "timezone": "Asia/Kolkata",
-    "types": ["public", "company", "optional"],
-    "envFormat": "comma-separated dates only"
-  },
-  "examples": {
-    "envVariable": "2025-03-14,2025-08-09,2025-08-15,2025-08-16,2025-10-02",
-    "notes": [
-      "Dates must be in YYYY-MM-DD format",
-      "No spaces between dates in env variable",
-      "Include weekend holidays for clarity",
-      "All dates are considered in IST timezone"
-    ]
-  }
+import moment from "moment-timezone";
+
+export interface TimeEntry {
+  start: string;
+  end: string;
+  description?: string;
+  project?: string;
+  task?: string;
 }
 
-================
-File: docs/templates/user-config-template.json
-================
+export class BaseAnalyzer {
+  protected readonly IST_TIMEZONE: string;
 
-
-================
-File: services/analyzers/BaseAnalyzer.js
-================
-const moment = require("moment-timezone");
-
-class BaseAnalyzer {
   constructor() {
     this.IST_TIMEZONE = "Asia/Kolkata";
   }
 
-  calculateTotalHours(entries) {
+  calculateTotalHours(entries: TimeEntry[]): number {
     if (!entries || entries.length === 0) {
       return 0;
     }
@@ -1071,20 +1218,43 @@ class BaseAnalyzer {
     }, 0);
   }
 
-  roundHours(hours) {
+  roundHours(hours: number): number {
     return Math.round(hours * 100) / 100;
   }
 }
 
-module.exports = BaseAnalyzer;
-
 ================
-File: services/analyzers/MonthlyAnalyzer.js
+File: src/services/analyzers/MonthlyAnalyzer.ts
 ================
-const BaseAnalyzer = require("./BaseAnalyzer");
+import { BaseAnalyzer, TimeEntry } from "./BaseAnalyzer";
+import { User } from "../../config/UserConfig";
 
-class MonthlyAnalyzer extends BaseAnalyzer {
-  analyzeEntries(entries, user) {
+interface AnalysisResult {
+  user: string;
+  team: string;
+  totalHours: number;
+}
+
+interface TeamMember {
+  name: string;
+  hours: number;
+}
+
+interface TeamTotal {
+  name: string;
+  totalHours: number;
+  members: TeamMember[];
+}
+
+interface TeamAnalysis {
+  teams: {
+    [key: string]: TeamTotal;
+  };
+  grandTotal: number;
+}
+
+export class MonthlyAnalyzer extends BaseAnalyzer {
+  analyzeEntries(entries: TimeEntry[], user: User): AnalysisResult {
     const totalHours = this.roundHours(this.calculateTotalHours(entries));
 
     return {
@@ -1094,8 +1264,8 @@ class MonthlyAnalyzer extends BaseAnalyzer {
     };
   }
 
-  groupByTeam(results) {
-    const teamTotals = {};
+  groupByTeam(results: AnalysisResult[]): TeamAnalysis {
+    const teamTotals: { [key: string]: TeamTotal } = {};
     let grandTotal = 0;
 
     results.forEach((result) => {
@@ -1123,60 +1293,88 @@ class MonthlyAnalyzer extends BaseAnalyzer {
   }
 }
 
-module.exports = MonthlyAnalyzer;
+================
+File: src/services/formatters/BaseFormatter.ts
+================
+interface SlackBlock {
+  type: string;
+  text?: any;
+  elements?: any[];
+}
 
-================
-File: services/formatters/BaseFormatter.js
-================
-class BaseFormatter {
-    createHeaderBlock(text) {
-      return {
-        type: "header",
-        text: {
-          type: "plain_text",
-          text,
-          emoji: true,
-        },
-      };
-    }
-  
-    createSectionBlock(text) {
-      return {
-        type: "section",
-        text: {
+export class BaseFormatter {
+  protected createHeaderBlock(text: string): SlackBlock {
+    return {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text,
+        emoji: true,
+      },
+    };
+  }
+
+  protected createSectionBlock(text: string): SlackBlock {
+    return {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text,
+      },
+    };
+  }
+
+  protected createDividerBlock(): SlackBlock {
+    return { type: "divider" };
+  }
+
+  protected createContextBlock(text: string): SlackBlock {
+    return {
+      type: "context",
+      elements: [
+        {
           type: "mrkdwn",
           text,
         },
-      };
-    }
-  
-    createDividerBlock() {
-      return { type: "divider" };
-    }
-  
-    createContextBlock(text) {
-      return {
-        type: "context",
-        elements: [
-          {
-            type: "mrkdwn",
-            text,
-          },
-        ],
-      };
-    }
+      ],
+    };
   }
-  
-  module.exports = BaseFormatter;
+}
 
 ================
-File: services/formatters/MonthlyFormatter.js
+File: src/services/formatters/MonthlyFormatter.ts
 ================
-const moment = require("moment-timezone");
-const BaseFormatter = require("./BaseFormatter");
+import moment from "moment-timezone";
+import { BaseFormatter } from "./BaseFormatter";
 
-class MonthlyFormatter extends BaseFormatter {
-  formatReport(results, monthDate, totalExpectedHours) {
+interface TeamMember {
+  name: string;
+  hours: number;
+}
+
+interface Team {
+  name: string;
+  totalHours: number;
+  members: TeamMember[];
+}
+
+interface Results {
+  teams: {
+    [key: string]: Team;
+  };
+  grandTotal: number;
+}
+
+type TeamEmoji = {
+  [key: string]: string;
+};
+
+export class MonthlyFormatter extends BaseFormatter {
+  formatReport(
+    results: Results,
+    monthDate: Date | string,
+    totalExpectedHours: number
+  ): any[] {
     const blocks = [];
     const monthStr = moment(monthDate).format("MMMM YYYY");
 
@@ -1234,8 +1432,8 @@ class MonthlyFormatter extends BaseFormatter {
     return blocks;
   }
 
-  getTeamEmoji(teamId) {
-    const emojis = {
+  private getTeamEmoji(teamId: string): string {
+    const emojis: TeamEmoji = {
       teamAlpha: "🔵",
       teamBravo: "🟣",
       teamCharlie: "🟡",
@@ -1249,16 +1447,55 @@ class MonthlyFormatter extends BaseFormatter {
   }
 }
 
-module.exports = MonthlyFormatter;
-
 ================
-File: services/ClockifyClient.js
+File: src/services/ClockifyClient.ts
 ================
-const axios = require("axios");
-const moment = require("moment-timezone");
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
+import moment from "moment-timezone";
 
-class ClockifyClient {
-  constructor(apiKey) {
+interface QueueItem {
+  config: AxiosRequestConfig;
+  resolve: (value: any) => void;
+  reject: (reason: any) => void;
+}
+
+interface Workspace {
+  id: string;
+  name: string;
+  [key: string]: any;
+}
+
+interface UserInfo {
+  id: string;
+  email: string;
+  name: string;
+  [key: string]: any;
+}
+
+interface TimeEntry {
+  id: string;
+  description: string;
+  timeInterval: {
+    start: string;
+    end: string;
+  };
+  project?: {
+    name: string;
+  };
+  task?: {
+    name: string;
+  };
+  [key: string]: any;
+}
+
+export class ClockifyClient {
+  private apiKey: string;
+  private baseURL: string;
+  private requestQueue: QueueItem[];
+  private isProcessing: boolean;
+  private rateLimitDelay: number;
+
+  constructor(apiKey: string) {
     this.apiKey = apiKey;
     this.baseURL = "https://api.clockify.me/api/v1";
     this.requestQueue = [];
@@ -1266,19 +1503,19 @@ class ClockifyClient {
     this.rateLimitDelay = 50; // 50ms delay between requests (20 requests per second to be safe)
   }
 
-  async processQueue() {
+  private async processQueue(): Promise<void> {
     if (this.isProcessing) return;
     this.isProcessing = true;
 
     while (this.requestQueue.length > 0) {
-      const { config, resolve, reject } = this.requestQueue.shift();
+      const { config, resolve, reject } = this.requestQueue.shift()!;
       try {
         await new Promise((resolve) =>
           setTimeout(resolve, this.rateLimitDelay)
         );
         const response = await this._makeRequest(config);
         resolve(response);
-      } catch (error) {
+      } catch (error: any) {
         if (error.response?.status === 429) {
           // Rate limit hit
           console.log("Rate limit hit, waiting before retry...");
@@ -1293,7 +1530,9 @@ class ClockifyClient {
     this.isProcessing = false;
   }
 
-  async _makeRequest(config) {
+  private async _makeRequest(
+    config: AxiosRequestConfig
+  ): Promise<AxiosResponse> {
     return axios({
       ...config,
       headers: {
@@ -1303,14 +1542,14 @@ class ClockifyClient {
     });
   }
 
-  enqueueRequest(config) {
+  private enqueueRequest(config: AxiosRequestConfig): Promise<AxiosResponse> {
     return new Promise((resolve, reject) => {
       this.requestQueue.push({ config, resolve, reject });
       this.processQueue();
     });
   }
 
-  async getWorkspaces() {
+  async getWorkspaces(): Promise<Workspace[]> {
     const response = await this.enqueueRequest({
       method: "GET",
       url: `${this.baseURL}/workspaces`,
@@ -1318,7 +1557,7 @@ class ClockifyClient {
     return response.data;
   }
 
-  async getUserInfo() {
+  async getUserInfo(): Promise<UserInfo> {
     const response = await this.enqueueRequest({
       method: "GET",
       url: `${this.baseURL}/user`,
@@ -1326,7 +1565,12 @@ class ClockifyClient {
     return response.data;
   }
 
-  async getTimeEntries(workspaceId, userId, startDate, endDate) {
+  async getTimeEntries(
+    workspaceId: string,
+    userId: string,
+    startDate: moment.Moment,
+    endDate: moment.Moment
+  ): Promise<TimeEntry[]> {
     console.log(
       `Fetching entries for ${userId} from ${startDate.format()} to ${endDate.format()}`
     );
@@ -1343,7 +1587,7 @@ class ClockifyClient {
       timezone: startDate.tz(),
     });
 
-    const entries = [];
+    const entries: TimeEntry[] = [];
     let page = 1;
     const pageSize = 50;
 
@@ -1385,25 +1629,40 @@ class ClockifyClient {
   }
 }
 
-module.exports = ClockifyClient;
-
 ================
-File: services/SlackNotifier.js
+File: src/services/SlackNotifier.ts
 ================
-const { WebClient } = require("@slack/web-api");
-const moment = require("moment-timezone");
-const MonthlyFormatter = require("./formatters/MonthlyFormatter");
+import { WebClient } from "@slack/web-api";
+import moment from "moment-timezone";
+import { MonthlyFormatter } from "./formatters/MonthlyFormatter";
+import { SuspiciousEntry } from "./TimeAnalyzer";
 
-class SlackNotifier {
-  constructor(token, channelId) {
+interface Analysis {
+  user?: string;
+  totalHours: number;
+  isMissing: boolean;
+  missingHours?: number;
+  suspiciousEntries: SuspiciousEntry[] | null;
+}
+
+interface AnalysisResult extends Analysis {
+  user: string;
+}
+
+export class SlackNotifier {
+  private client: WebClient;
+  private channelId: string;
+  private monthlyFormatter: MonthlyFormatter;
+
+  constructor(token: string, channelId: string) {
     this.client = new WebClient(token);
     this.channelId = channelId;
     this.monthlyFormatter = new MonthlyFormatter();
   }
 
-  async notifyChannel(analysis, date) {
+  async notifyChannel(analysis: Analysis, date: Date | string): Promise<any> {
     try {
-      let message = this._buildMessage(analysis, date);
+      const message = this._buildMessage(analysis, date);
       if (!message) return null; // No issues to report
 
       const response = await this.client.chat.postMessage({
@@ -1419,7 +1678,10 @@ class SlackNotifier {
     }
   }
 
-  async notifyBulk(results, date) {
+  async notifyBulk(
+    results: AnalysisResult[],
+    date: Date | string
+  ): Promise<any> {
     try {
       // Send a summary message for all users
       const summaryBlocks = this._buildSummaryBlocks(results, date);
@@ -1437,7 +1699,11 @@ class SlackNotifier {
     }
   }
 
-  async notifyMonthly(results, monthDate, totalExpectedHours) {
+  async notifyMonthly(
+    results: any,
+    monthDate: Date | string,
+    totalExpectedHours: number
+  ): Promise<any> {
     try {
       const blocks = this.monthlyFormatter.formatReport(
         results,
@@ -1458,7 +1724,10 @@ class SlackNotifier {
     }
   }
 
-  _buildSummaryBlocks(results, date) {
+  private _buildSummaryBlocks(
+    results: AnalysisResult[],
+    date: Date | string
+  ): any[] {
     const blocks = [];
     const dateStr = moment(date).format("dddd, MMMM D, YYYY");
 
@@ -1508,12 +1777,12 @@ class SlackNotifier {
       });
 
       suspiciousEntries.forEach((result) => {
-        result.suspiciousEntries.forEach((entry) => {
+        result.suspiciousEntries?.forEach((entry) => {
           let issueText = "";
           if (entry.type === "long_duration") {
             issueText = `• ${
               result.user
-            } - Long duration entry detected (${entry.duration.toFixed(
+            } - Long duration entry detected (${entry.duration?.toFixed(
               1
             )} hours)`;
           } else if (entry.type === "large_gap") {
@@ -1521,7 +1790,7 @@ class SlackNotifier {
           } else if (entry.type === "insufficient_hours") {
             issueText = `• ${
               result.user
-            } - Short duration entry detected (${entry.totalHours.toFixed(
+            } - Short duration entry detected (${entry.totalHours?.toFixed(
               1
             )} hours)`;
           }
@@ -1556,11 +1825,14 @@ class SlackNotifier {
     return blocks;
   }
 
-  _buildMessage(analysis, date) {
+  private _buildMessage(
+    analysis: Analysis,
+    date: Date | string
+  ): string | null {
     const parts = [];
     const dateStr = moment(date).format("dddd, MMMM D, YYYY");
 
-    if (analysis.isMissing) {
+    if (analysis.isMissing && analysis.missingHours !== undefined) {
       parts.push(
         `🔔 *Missing Hours Alert*\nYou logged ${analysis.totalHours} hours on ${dateStr}. Required: ${analysis.missingHours} more hours.`
       );
@@ -1568,13 +1840,13 @@ class SlackNotifier {
 
     if (analysis.suspiciousEntries) {
       analysis.suspiciousEntries.forEach((entry) => {
-        if (entry.type === "long_duration") {
+        if (entry.type === "long_duration" && entry.duration !== undefined) {
           parts.push(
             `⚠️ *Long Duration Entry*\nAn entry on ${dateStr} is ${entry.duration.toFixed(
               1
             )} hours long.`
           );
-        } else if (entry.type === "large_gap") {
+        } else if (entry.type === "large_gap" && entry.gap !== undefined) {
           parts.push(
             `⚠️ *Large Gap Detected*\nThere's a ${entry.gap.toFixed(
               1
@@ -1584,10 +1856,10 @@ class SlackNotifier {
       });
     }
 
-    return parts.join("\n\n");
+    return parts.length > 0 ? parts.join("\n\n") : null;
   }
 
-  _buildBlocks(analysis, date) {
+  private _buildBlocks(analysis: Analysis, date: Date | string): any[] {
     const blocks = [];
     const dateStr = moment(date).format("dddd, MMMM D, YYYY");
 
@@ -1619,7 +1891,7 @@ class SlackNotifier {
     });
 
     // Missing hours alert
-    if (analysis.isMissing) {
+    if (analysis.isMissing && analysis.missingHours !== undefined) {
       blocks.push({
         type: "section",
         text: {
@@ -1634,30 +1906,20 @@ class SlackNotifier {
     // Suspicious entries
     if (analysis.suspiciousEntries) {
       analysis.suspiciousEntries.forEach((entry) => {
-        let text = "";
-        if (entry.type === "long_duration") {
-          text = `⚠️ *Long Duration Entry Detected*\n• Duration: ${entry.duration.toFixed(
+        if (entry.type === "long_duration" && entry.duration !== undefined) {
+          const text = `⚠️ *Long Duration Entry Detected*\n• Duration: ${entry.duration.toFixed(
             1
           )} hours\n• Description: ${
-            entry.entry.description || "No description"
-          }\n• Time: ${moment(entry.entry.start).format("HH:mm")} - ${moment(
-            entry.entry.end
-          ).format("HH:mm")}`;
-        } else if (entry.type === "large_gap") {
-          text = `⚠️ *Large Gap Detected*\n• Gap: ${entry.gap.toFixed(
-            1
-          )} hours\n• Between: ${moment(entry.before.end).format(
-            "HH:mm"
-          )} and ${moment(entry.after.start).format("HH:mm")}`;
+            entry.entry?.description || "No description"
+          }`;
+          blocks.push({
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text,
+            },
+          });
         }
-
-        blocks.push({
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text,
-          },
-        });
       });
     }
 
@@ -1665,13 +1927,13 @@ class SlackNotifier {
   }
 }
 
-module.exports = SlackNotifier;
-
 ================
-File: services/TimeAnalyzer.js
+File: src/services/TimeAnalyzer.ts
 ================
-const moment = require("moment-timezone");
-const MonthlyAnalyzer = require("./analyzers/MonthlyAnalyzer");
+import moment from "moment-timezone";
+import { MonthlyAnalyzer } from "./analyzers/MonthlyAnalyzer";
+import { TimeEntry } from "./analyzers/BaseAnalyzer";
+import { User } from "../config/UserConfig";
 
 // Constants
 const IST_TIMEZONE = "Asia/Kolkata";
@@ -1679,12 +1941,61 @@ const REQUIRED_HOURS = 8;
 const SUSPICIOUS_GAP_HOURS = 4;
 const SUSPICIOUS_DURATION_HOURS = 10;
 
+export interface SuspiciousEntry {
+  type: "long_duration" | "large_gap" | "insufficient_hours";
+  entry?: TimeEntry;
+  duration?: number;
+  startTime?: string;
+  endTime?: string;
+  before?: TimeEntry;
+  after?: TimeEntry;
+  gap?: number;
+  gapStartTime?: string;
+  gapEndTime?: string;
+  totalHours?: number;
+  missingHours?: number;
+}
+
+export interface AnalysisResult {
+  totalHours: number;
+  isMissing: boolean;
+  missingHours: number;
+  suspiciousEntries: SuspiciousEntry[] | null;
+}
+
+interface TeamMember {
+  name: string;
+  hours: number;
+}
+
+interface Team {
+  name: string;
+  totalHours: number;
+  members: TeamMember[];
+}
+
+interface TeamResults {
+  teams: {
+    [key: string]: Team;
+  };
+  grandTotal: number;
+}
+
+interface Teams {
+  [key: string]: {
+    name: string;
+    [key: string]: any;
+  };
+}
+
 class TimeAnalyzer {
+  private monthlyAnalyzer: MonthlyAnalyzer;
+
   constructor() {
     this.monthlyAnalyzer = new MonthlyAnalyzer();
   }
 
-  analyzeEntries(entries, date) {
+  analyzeEntries(entries: TimeEntry[], date: Date | string): AnalysisResult {
     if (!entries || entries.length === 0) {
       return {
         totalHours: 0,
@@ -1700,7 +2011,7 @@ class TimeAnalyzer {
     );
 
     let totalHours = 0;
-    let suspiciousEntries = [];
+    const suspiciousEntries: SuspiciousEntry[] = [];
 
     // Debug log for entries analysis
     console.log("Analyzing entries:", {
@@ -1778,7 +2089,7 @@ class TimeAnalyzer {
     };
   }
 
-  calculateTotalHours(entries) {
+  calculateTotalHours(entries: TimeEntry[]): number {
     if (!entries || entries.length === 0) {
       return 0;
     }
@@ -1791,12 +2102,12 @@ class TimeAnalyzer {
     }, 0);
   }
 
-  analyzeMonthlyEntries(entries, user) {
+  analyzeMonthlyEntries(entries: TimeEntry[], user: User) {
     return this.monthlyAnalyzer.analyzeEntries(entries, user);
   }
 
-  groupByTeam(results, teams) {
-    const teamResults = {
+  groupByTeam(results: any[], teams: Teams): TeamResults {
+    const teamResults: TeamResults = {
       teams: {},
       grandTotal: 0,
     };
@@ -1836,61 +2147,56 @@ class TimeAnalyzer {
   }
 }
 
-module.exports = new TimeAnalyzer();
+export default new TimeAnalyzer();
 
 ================
-File: .gitignore
+File: src/index.ts
 ================
-# Dependencies
-node_modules/
-package-lock.json
-
-# Testing
-coverage/
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS
-.DS_Store
-Thumbs.db
-
-================
-File: index.js
-================
-const moment = require("moment-timezone");
-const ClockifyClient = require("./services/ClockifyClient");
-const timeAnalyzer = require("./services/TimeAnalyzer");
-const SlackNotifier = require("./services/SlackNotifier");
-const UserConfig = require("./config/UserConfig");
+import moment from "moment-timezone";
+import { ClockifyClient } from "./services/ClockifyClient";
+import timeAnalyzer, {
+  AnalysisResult as TimeAnalyzerResult,
+} from "./services/TimeAnalyzer";
+import { SlackNotifier } from "./services/SlackNotifier";
+import UserConfig from "./config/UserConfig";
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 
 // Constants
 const IST_TIMEZONE = "Asia/Kolkata";
 
+interface Event extends APIGatewayProxyEvent {
+  reportType?: "monthly" | "daily";
+  testDate?: string;
+  env?: {
+    HOLIDAYS?: string;
+  };
+}
+
+interface FormattedTimeEntry {
+  start: string;
+  end: string;
+  description: string;
+  project: string;
+  task: string;
+}
+
+interface AnalysisResult extends TimeAnalyzerResult {
+  user: string;
+  email?: string;
+  team?: string;
+  entries?: FormattedTimeEntry[];
+  error?: string;
+}
+
 // Initialize clients
-const clockify = new ClockifyClient(process.env.CLOCKIFY_API_KEY);
+const clockify = new ClockifyClient(process.env.CLOCKIFY_API_KEY || "");
 const slack = new SlackNotifier(
-  process.env.SLACK_BOT_TOKEN,
-  process.env.SLACK_CHANNEL_ID
+  process.env.SLACK_BOT_TOKEN || "",
+  process.env.SLACK_CHANNEL_ID || ""
 );
 const userConfig = new UserConfig(process.env.USERS);
 
-exports.handler = async (event) => {
+export const handler = async (event: Event): Promise<APIGatewayProxyResult> => {
   try {
     console.log("Event:", JSON.stringify(event));
 
@@ -1898,7 +2204,11 @@ exports.handler = async (event) => {
     const isMonthlyReport = event?.reportType === "monthly";
 
     // Calculate the time range
-    let startTime, endTime, previousWorkday, weekNumber;
+    let startTime: moment.Moment,
+      endTime: moment.Moment,
+      previousWorkday: moment.Moment,
+      weekNumber = 0; // Initialize weekNumber
+
     if (isMonthlyReport) {
       // For monthly report, get data from start of month to current week
       const now = event.testDate
@@ -1917,7 +2227,11 @@ exports.handler = async (event) => {
       const holidays = (event.env?.HOLIDAYS || process.env.HOLIDAYS || "")
         .split(",")
         .map((d) => d.trim());
-      const workingDays = getWorkingDaysCount(startTime, endTime, holidays);
+      const workingDays = await getWorkingDaysCount(
+        startTime,
+        endTime,
+        holidays
+      );
 
       console.log("Monthly report timing details:", {
         testDate: event.testDate || "none",
@@ -1932,7 +2246,7 @@ exports.handler = async (event) => {
       previousWorkday = now;
     } else {
       // For daily report, get previous working day's data
-      previousWorkday = getPreviousWorkday(
+      previousWorkday = await getPreviousWorkday(
         moment().tz(IST_TIMEZONE),
         (process.env.HOLIDAYS || "").split(",").map((d) => d.trim())
       );
@@ -1956,7 +2270,7 @@ exports.handler = async (event) => {
 
     console.log("Selected users for report:", {
       totalUsers: users.length,
-      teamCounts: users.reduce((acc, user) => {
+      teamCounts: users.reduce<Record<string, number>>((acc, user) => {
         acc[user.team] = (acc[user.team] || 0) + 1;
         return acc;
       }, {}),
@@ -1977,7 +2291,7 @@ exports.handler = async (event) => {
 
     // Process users in batches to respect rate limits
     const batchSize = 5;
-    const results = [];
+    const results: AnalysisResult[] = [];
 
     for (let i = 0; i < users.length; i += batchSize) {
       const userBatch = users.slice(i, i + batchSize);
@@ -1999,7 +2313,7 @@ exports.handler = async (event) => {
             );
 
             // Format entries for analysis
-            const formattedEntries = entries.map((e) => ({
+            const formattedEntries: FormattedTimeEntry[] = entries.map((e) => ({
               start: e.timeInterval.start,
               end: e.timeInterval.end,
               description: e.description || "",
@@ -2010,7 +2324,7 @@ exports.handler = async (event) => {
             // Analyze entries
             const analysis = timeAnalyzer.analyzeEntries(
               formattedEntries,
-              previousWorkday
+              previousWorkday.toDate()
             );
 
             return {
@@ -2024,7 +2338,11 @@ exports.handler = async (event) => {
             console.error(`Error checking user ${user.name}:`, error);
             return {
               user: user.name,
-              error: error.message,
+              error: error instanceof Error ? error.message : String(error),
+              totalHours: 0,
+              isMissing: true,
+              missingHours: 8,
+              suspiciousEntries: null,
             };
           }
         })
@@ -2071,7 +2389,7 @@ exports.handler = async (event) => {
       const currentDate = reportDate.clone();
       const finalEndDate = moment.min(monthEnd, currentDate);
 
-      const workingDays = getWorkingDaysCount(
+      const workingDays = await getWorkingDaysCount(
         monthStart,
         finalEndDate,
         holidays
@@ -2089,10 +2407,14 @@ exports.handler = async (event) => {
       });
 
       // Send monthly report to Slack with expected hours using the correct date
-      await slack.notifyMonthly(groupedResults, reportDate, totalExpectedHours);
+      await slack.notifyMonthly(
+        groupedResults,
+        reportDate.toDate(),
+        totalExpectedHours
+      );
     } else {
       // Send daily report to Slack
-      await slack.notifyBulk(results, previousWorkday);
+      await slack.notifyBulk(results, previousWorkday.toDate());
     }
 
     return {
@@ -2118,87 +2440,129 @@ exports.handler = async (event) => {
       statusCode: 500,
       body: JSON.stringify({
         message: "Error in Time Warden",
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       }),
     };
   }
 };
 
-async function checkIfWorkingDay(date, holidays) {
+async function checkIfWorkingDay(
+  date: moment.Moment,
+  holidays: string[]
+): Promise<boolean> {
   const dayOfWeek = date.day();
-  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-  if (isWeekend) {
-    return {
-      shouldProcess: false,
-      reason: "Weekend",
-      isWeekend: true,
-      isHoliday: false,
-    };
-  }
-
   const dateStr = date.format("YYYY-MM-DD");
-  const isHoliday = holidays.includes(dateStr);
 
-  if (isHoliday) {
-    return {
-      shouldProcess: false,
-      reason: "Holiday",
-      isWeekend: false,
-      isHoliday: true,
-    };
+  // Check if it's a weekend
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    return false;
   }
 
-  return {
-    shouldProcess: true,
-    reason: "Working Day",
-    isWeekend: false,
-    isHoliday: false,
-  };
-}
-
-function getPreviousWorkday(date, holidays) {
-  let previousDay = date.clone().subtract(1, "days");
-  let attempts = 0; // Add safety counter to prevent infinite loops
-  const maxAttempts = 10; // Maximum number of days to look back
-
-  while (
-    (previousDay.day() === 0 || // Sunday
-      previousDay.day() === 6 || // Saturday
-      holidays.includes(previousDay.format("YYYY-MM-DD"))) &&
-    attempts < maxAttempts
-  ) {
-    previousDay.subtract(1, "days");
-    attempts++;
+  // Check if it's a holiday
+  if (holidays.includes(dateStr)) {
+    return false;
   }
 
-  console.log("getPreviousWorkday details:", {
-    startDate: date.format("YYYY-MM-DD"),
-    foundPreviousDay: previousDay.format("YYYY-MM-DD"),
-    attempts: attempts,
-    isWeekend: previousDay.day() === 0 || previousDay.day() === 6,
-    isHoliday: holidays.includes(previousDay.format("YYYY-MM-DD")),
-  });
-
-  return previousDay;
+  return true;
 }
 
-function getWorkingDaysCount(startDate, endDate, holidays) {
-  let count = 0;
-  let current = startDate.clone();
+async function getPreviousWorkday(
+  date: moment.Moment,
+  holidays: string[]
+): Promise<moment.Moment> {
+  let currentDate = date.clone().subtract(1, "day");
 
-  while (current.isSameOrBefore(endDate, "day")) {
-    // Check if it's not a weekend and not a holiday
-    if (
-      current.day() !== 0 &&
-      current.day() !== 6 &&
-      !holidays.includes(current.format("YYYY-MM-DD"))
-    ) {
-      count++;
+  while (!(await checkIfWorkingDay(currentDate, holidays))) {
+    currentDate.subtract(1, "day");
+  }
+
+  return currentDate;
+}
+
+async function getWorkingDaysCount(
+  startDate: moment.Moment,
+  endDate: moment.Moment,
+  holidays: string[]
+): Promise<number> {
+  let workingDays = 0;
+  let currentDate = startDate.clone();
+
+  while (currentDate.isSameOrBefore(endDate, "day")) {
+    if (await checkIfWorkingDay(currentDate, holidays)) {
+      workingDays++;
     }
-    current.add(1, "day");
+    currentDate.add(1, "day");
   }
-  return count;
+
+  return workingDays;
+}
+
+================
+File: .gitignore
+================
+# Dependencies
+node_modules/
+package-lock.json
+
+# Testing
+coverage/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+================
+File: package.json
+================
+{
+  "name": "time-variance-authority",
+  "version": "1.0.0",
+  "description": "Time tracking and analysis tool",
+  "main": "dist/index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.147",
+    "@types/node": "^22.13.5",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@slack/web-api": "^7.8.0",
+    "@types/axios": "^0.14.4",
+    "@types/moment-timezone": "^0.5.30",
+    "axios": "^1.7.9",
+    "moment-timezone": "^0.5.47"
+  }
 }
 
 ================
@@ -2227,10 +2591,25 @@ With automated updates delivered straight from the Clockify API to Slack, TVA he
 
 ### Architecture
 
-- AWS Lambda Functions
+- AWS Lambda Functions with TypeScript
 - Clockify API Integration
 - Slack Notifications
 - Node.js Runtime
+- TypeScript for Type Safety
+
+### Build and Deploy
+
+```bash
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# The compiled JavaScript will be in the dist/ directory
+# Zip the contents for AWS Lambda deployment
+npm run build && cd dist && zip -r ../lambda.zip . && cd .. && zip -r lambda.zip node_modules/
+```
 
 ### Scheduled Runs
 
@@ -2301,6 +2680,123 @@ The system monitors for:
 ## 🚀 "For all time, always."
 
 TVA ensures temporal compliance in time tracking, maintaining order across all timelines!
+
+================
+File: tsconfig.json
+================
+{
+  "compilerOptions": {
+    /* Visit https://aka.ms/tsconfig to read more about this file */
+
+    /* Projects */
+    // "incremental": true,                              /* Save .tsbuildinfo files to allow for incremental compilation of projects. */
+    // "composite": true,                                /* Enable constraints that allow a TypeScript project to be used with project references. */
+    // "tsBuildInfoFile": "./.tsbuildinfo",              /* Specify the path to .tsbuildinfo incremental compilation file. */
+    // "disableSourceOfProjectReferenceRedirect": true,  /* Disable preferring source files instead of declaration files when referencing composite projects. */
+    // "disableSolutionSearching": true,                 /* Opt a project out of multi-project reference checking when editing. */
+    // "disableReferencedProjectLoad": true,             /* Reduce the number of projects loaded automatically by TypeScript. */
+
+    /* Language and Environment */
+    "target": "es2019",                                  /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    // "lib": [],                                        /* Specify a set of bundled library declaration files that describe the target runtime environment. */
+    // "jsx": "preserve",                                /* Specify what JSX code is generated. */
+    // "experimentalDecorators": true,                   /* Enable experimental support for legacy experimental decorators. */
+    // "emitDecoratorMetadata": true,                    /* Emit design-type metadata for decorated declarations in source files. */
+    // "jsxFactory": "",                                 /* Specify the JSX factory function used when targeting React JSX emit, e.g. 'React.createElement' or 'h'. */
+    // "jsxFragmentFactory": "",                         /* Specify the JSX Fragment reference used for fragments when targeting React JSX emit e.g. 'React.Fragment' or 'Fragment'. */
+    // "jsxImportSource": "",                            /* Specify module specifier used to import the JSX factory functions when using 'jsx: react-jsx*'. */
+    // "reactNamespace": "",                             /* Specify the object invoked for 'createElement'. This only applies when targeting 'react' JSX emit. */
+    // "noLib": true,                                    /* Disable including any library files, including the default lib.d.ts. */
+    // "useDefineForClassFields": true,                  /* Emit ECMAScript-standard-compliant class fields. */
+    // "moduleDetection": "auto",                        /* Control what method is used to detect module-format JS files. */
+
+    /* Modules */
+    "module": "commonjs",                                /* Specify what module code is generated. */
+    "rootDir": "./src",
+    // "moduleResolution": "node10",                     /* Specify how TypeScript looks up a file from a given module specifier. */
+    // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
+    // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
+    // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
+    // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
+    // "types": [],                                      /* Specify type package names to be included without being referenced in a source file. */
+    // "allowUmdGlobalAccess": true,                     /* Allow accessing UMD globals from modules. */
+    // "moduleSuffixes": [],                             /* List of file name suffixes to search when resolving a module. */
+    // "allowImportingTsExtensions": true,               /* Allow imports to include TypeScript file extensions. Requires '--moduleResolution bundler' and either '--noEmit' or '--emitDeclarationOnly' to be set. */
+    // "rewriteRelativeImportExtensions": true,          /* Rewrite '.ts', '.tsx', '.mts', and '.cts' file extensions in relative import paths to their JavaScript equivalent in output files. */
+    // "resolvePackageJsonExports": true,                /* Use the package.json 'exports' field when resolving package imports. */
+    // "resolvePackageJsonImports": true,                /* Use the package.json 'imports' field when resolving imports. */
+    // "customConditions": [],                           /* Conditions to set in addition to the resolver-specific defaults when resolving imports. */
+    // "noUncheckedSideEffectImports": true,             /* Check side effect imports. */
+    "resolveJsonModule": true,                        /* Enable importing .json files. */
+    // "allowArbitraryExtensions": true,                 /* Enable importing files with any extension, provided a declaration file is present. */
+    // "noResolve": true,                                /* Disallow 'import's, 'require's or '<reference>'s from expanding the number of files TypeScript should add to a project. */
+
+    /* JavaScript Support */
+    "allowJs": true,                                  /* Allow JavaScript files to be a part of your program. Use the 'checkJS' option to get errors from these files. */
+    "checkJs": false,                                  /* Enable error reporting in type-checked JavaScript files. */
+    // "maxNodeModuleJsDepth": 1,                        /* Specify the maximum folder depth used for checking JavaScript files from 'node_modules'. Only applicable with 'allowJs'. */
+
+    /* Emit */
+    // "declaration": true,                              /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
+    // "declarationMap": true,                           /* Create sourcemaps for d.ts files. */
+    // "emitDeclarationOnly": true,                      /* Only output d.ts files and not JavaScript files. */
+    "sourceMap": true,                                /* Create source map files for emitted JavaScript files. */
+    // "inlineSourceMap": true,                          /* Include sourcemap files inside the emitted JavaScript. */
+    // "noEmit": true,                                   /* Disable emitting files from a compilation. */
+    // "outFile": "./",                                  /* Specify a file that bundles all outputs into one JavaScript file. If 'declaration' is true, also designates a file that bundles all .d.ts output. */
+    "outDir": "./dist",                                   /* Specify an output folder for all emitted files. */
+    // "removeComments": true,                           /* Disable emitting comments. */
+    // "importHelpers": true,                            /* Allow importing helper functions from tslib once per project, instead of including them per-file. */
+    // "downlevelIteration": true,                       /* Emit more compliant, but verbose and less performant JavaScript for iteration. */
+    // "sourceRoot": "",                                 /* Specify the root path for debuggers to find the reference source code. */
+    // "mapRoot": "",                                    /* Specify the location where debugger should locate map files instead of generated locations. */
+    // "inlineSources": true,                            /* Include source code in the sourcemaps inside the emitted JavaScript. */
+    // "emitBOM": true,                                  /* Emit a UTF-8 Byte Order Mark (BOM) in the beginning of output files. */
+    // "newLine": "crlf",                                /* Set the newline character for emitting files. */
+    // "stripInternal": true,                            /* Disable emitting declarations that have '@internal' in their JSDoc comments. */
+    // "noEmitHelpers": true,                            /* Disable generating custom helper functions like '__extends' in compiled output. */
+    // "noEmitOnError": true,                            /* Disable emitting files if any type checking errors are reported. */
+    // "preserveConstEnums": true,                       /* Disable erasing 'const enum' declarations in generated code. */
+    // "declarationDir": "./",                           /* Specify the output directory for generated declaration files. */
+
+    /* Interop Constraints */
+    // "isolatedModules": true,                          /* Ensure that each file can be safely transpiled without relying on other imports. */
+    // "verbatimModuleSyntax": true,                     /* Do not transform or elide any imports or exports not marked as type-only, ensuring they are written in the output file's format based on the 'module' setting. */
+    // "isolatedDeclarations": true,                     /* Require sufficient annotation on exports so other tools can trivially generate declaration files. */
+    // "allowSyntheticDefaultImports": true,             /* Allow 'import x from y' when a module doesn't have a default export. */
+    "esModuleInterop": true,                             /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
+    // "preserveSymlinks": true,                         /* Disable resolving symlinks to their realpath. This correlates to the same flag in node. */
+    "forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
+
+    /* Type Checking */
+    "strict": true,                                      /* Enable all strict type-checking options. */
+    // "noImplicitAny": true,                            /* Enable error reporting for expressions and declarations with an implied 'any' type. */
+    // "strictNullChecks": true,                         /* When type checking, take into account 'null' and 'undefined'. */
+    // "strictFunctionTypes": true,                      /* When assigning functions, check to ensure parameters and the return values are subtype-compatible. */
+    // "strictBindCallApply": true,                      /* Check that the arguments for 'bind', 'call', and 'apply' methods match the original function. */
+    // "strictPropertyInitialization": true,             /* Check for class properties that are declared but not set in the constructor. */
+    // "strictBuiltinIteratorReturn": true,              /* Built-in iterators are instantiated with a 'TReturn' type of 'undefined' instead of 'any'. */
+    // "noImplicitThis": true,                           /* Enable error reporting when 'this' is given the type 'any'. */
+    // "useUnknownInCatchVariables": true,               /* Default catch clause variables as 'unknown' instead of 'any'. */
+    // "alwaysStrict": true,                             /* Ensure 'use strict' is always emitted. */
+    // "noUnusedLocals": true,                           /* Enable error reporting when local variables aren't read. */
+    // "noUnusedParameters": true,                       /* Raise an error when a function parameter isn't read. */
+    // "exactOptionalPropertyTypes": true,               /* Interpret optional property types as written, rather than adding 'undefined'. */
+    // "noImplicitReturns": true,                        /* Enable error reporting for codepaths that do not explicitly return in a function. */
+    // "noFallthroughCasesInSwitch": true,               /* Enable error reporting for fallthrough cases in switch statements. */
+    // "noUncheckedIndexedAccess": true,                 /* Add 'undefined' to a type when accessed using an index. */
+    // "noImplicitOverride": true,                       /* Ensure overriding members in derived classes are marked with an override modifier. */
+    // "noPropertyAccessFromIndexSignature": true,       /* Enforces using indexed accessors for keys declared using an indexed type. */
+    // "allowUnusedLabels": true,                        /* Disable error reporting for unused labels. */
+    // "allowUnreachableCode": true,                     /* Disable error reporting for unreachable code. */
+
+    /* Completeness */
+    // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
+    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
 
 
 

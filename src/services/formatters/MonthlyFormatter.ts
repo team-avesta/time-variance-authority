@@ -1,5 +1,5 @@
-import moment from "moment-timezone";
-import { BaseFormatter } from "./BaseFormatter";
+import moment from 'moment-timezone';
+import { BaseFormatter } from './BaseFormatter';
 
 interface TeamMember {
   name: string;
@@ -30,7 +30,7 @@ export class MonthlyFormatter extends BaseFormatter {
     totalExpectedHours: number
   ): any[] {
     const blocks = [];
-    const monthStr = moment(monthDate).format("MMMM YYYY");
+    const monthStr = moment(monthDate).format('MMMM YYYY');
 
     // Add header
     blocks.push(
@@ -61,7 +61,7 @@ export class MonthlyFormatter extends BaseFormatter {
       const membersList = team.members
         .sort((a, b) => b.hours - a.hours) // Sort by hours descending
         .map((member) => `• ${member.name} (${member.hours} hours)`)
-        .join("\n");
+        .join('\n');
 
       if (membersList) {
         blocks.push(this.createSectionBlock(membersList));
@@ -78,8 +78,8 @@ export class MonthlyFormatter extends BaseFormatter {
     blocks.push(
       this.createContextBlock(
         `⏰ Report generated at ${moment()
-          .tz("Asia/Kolkata")
-          .format("HH:mm")} IST`
+          .tz('Asia/Kolkata')
+          .format('HH:mm')} IST`
       )
     );
 
@@ -88,15 +88,15 @@ export class MonthlyFormatter extends BaseFormatter {
 
   private getTeamEmoji(teamId: string): string {
     const emojis: TeamEmoji = {
-      teamAlpha: "🔵",
-      teamBravo: "🟣",
-      teamCharlie: "🟡",
-      teamDelta: "🟢",
-      teamMobileApp: "📱",
-      teamZenuProject: "⭐",
-      teamInfra: "🔧",
-      teamDataAndAnalytics: "📊",
+      teamAlpha: '🔵',
+      teamBravo: '🟣',
+      teamCharlie: '🟡',
+      teamDelta: '🟢',
+      teamMobileApp: '📱',
+      teamZenuProject: '⭐',
+      teamInfra: '🔧',
+      teamDataAndAnalytics: '📊',
     };
-    return emojis[teamId] || "📌";
+    return emojis[teamId] || '📌';
   }
 }

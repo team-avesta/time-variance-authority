@@ -1,10 +1,10 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-import moment from "moment-timezone";
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import moment from 'moment-timezone';
 
 interface QueueItem {
   config: AxiosRequestConfig;
-  resolve: (value: any) => void;
-  reject: (reason: any) => void;
+  resolve: (_value: AxiosResponse) => void;
+  reject: (_reason: Error) => void;
 }
 
 interface Workspace {
@@ -45,7 +45,7 @@ export class ClockifyClient {
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
-    this.baseURL = "https://api.clockify.me/api/v1";
+    this.baseURL = 'https://api.clockify.me/api/v1';
     this.requestQueue = [];
     this.isProcessing = false;
     this.rateLimitDelay = 50; // 50ms delay between requests (20 requests per second to be safe)
@@ -66,7 +66,7 @@ export class ClockifyClient {
       } catch (error: any) {
         if (error.response?.status === 429) {
           // Rate limit hit
-          console.log("Rate limit hit, waiting before retry...");
+          console.log('Rate limit hit, waiting before retry...');
           await new Promise((resolve) => setTimeout(resolve, 1000));
           this.requestQueue.push({ config, resolve, reject });
         } else {
@@ -84,7 +84,7 @@ export class ClockifyClient {
     return axios({
       ...config,
       headers: {
-        "X-Api-Key": this.apiKey,
+        'X-Api-Key': this.apiKey,
         ...config.headers,
       },
     });
@@ -99,7 +99,7 @@ export class ClockifyClient {
 
   async getWorkspaces(): Promise<Workspace[]> {
     const response = await this.enqueueRequest({
-      method: "GET",
+      method: 'GET',
       url: `${this.baseURL}/workspaces`,
     });
     return response.data;
@@ -107,7 +107,7 @@ export class ClockifyClient {
 
   async getUserInfo(): Promise<UserInfo> {
     const response = await this.enqueueRequest({
-      method: "GET",
+      method: 'GET',
       url: `${this.baseURL}/user`,
     });
     return response.data;
@@ -124,7 +124,7 @@ export class ClockifyClient {
     );
 
     // Add detailed debug logging
-    console.log("DEBUG - API Request Details:", {
+    console.log('DEBUG - API Request Details:', {
       userId,
       startISO: startDate.toISOString(),
       endISO: endDate.toISOString(),
@@ -144,23 +144,23 @@ export class ClockifyClient {
         start: startDate.toISOString(),
         end: endDate.toISOString(),
         page: page,
-        "page-size": pageSize,
+        'page-size': pageSize,
       };
 
       // Log the exact API request for debugging
-      console.log("DEBUG - Making Clockify API request:", {
+      console.log('DEBUG - Making Clockify API request:', {
         url: `${this.baseURL}/workspaces/${workspaceId}/user/${userId}/time-entries`,
         params: requestParams,
       });
 
       const response = await this.enqueueRequest({
-        method: "GET",
+        method: 'GET',
         url: `${this.baseURL}/workspaces/${workspaceId}/user/${userId}/time-entries`,
         params: requestParams,
       });
 
       // Log the response status and data length
-      console.log("DEBUG - API Response:", {
+      console.log('DEBUG - API Response:', {
         status: response.status,
         entriesCount: response.data.length,
       });

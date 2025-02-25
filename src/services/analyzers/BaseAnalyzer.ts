@@ -1,4 +1,4 @@
-import moment from "moment-timezone";
+import moment from 'moment-timezone';
 
 export interface TimeEntry {
   start: string;
@@ -12,7 +12,7 @@ export class BaseAnalyzer {
   protected readonly IST_TIMEZONE: string;
 
   constructor() {
-    this.IST_TIMEZONE = "Asia/Kolkata";
+    this.IST_TIMEZONE = 'Asia/Kolkata';
   }
 
   calculateTotalHours(entries: TimeEntry[]): number {

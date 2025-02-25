@@ -1,5 +1,5 @@
-import { BaseAnalyzer, TimeEntry } from "./BaseAnalyzer";
-import { User } from "../../config/UserConfig";
+import { BaseAnalyzer, TimeEntry } from './BaseAnalyzer';
+import { User } from '../../config/UserConfig';
 
 interface AnalysisResult {
   user: string;

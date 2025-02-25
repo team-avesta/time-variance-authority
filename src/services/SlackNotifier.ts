@@ -1,7 +1,7 @@
-import { WebClient } from "@slack/web-api";
-import moment from "moment-timezone";
-import { MonthlyFormatter } from "./formatters/MonthlyFormatter";
-import { SuspiciousEntry } from "./TimeAnalyzer";
+import { WebClient } from '@slack/web-api';
+import moment from 'moment-timezone';
+import { MonthlyFormatter } from './formatters/MonthlyFormatter';
+import { SuspiciousEntry } from './TimeAnalyzer';
 
 interface Analysis {
   user?: string;
@@ -39,7 +39,7 @@ export class SlackNotifier {
 
       return response;
     } catch (error) {
-      console.error("Error sending Slack notification:", error);
+      console.error('Error sending Slack notification:', error);
       throw error;
     }
   }
@@ -54,13 +54,13 @@ export class SlackNotifier {
 
       const response = await this.client.chat.postMessage({
         channel: this.channelId,
-        text: "Time Entry Summary Report",
+        text: 'Time Entry Summary Report',
         blocks: summaryBlocks,
       });
 
       return response;
     } catch (error) {
-      console.error("Error sending bulk Slack notification:", error);
+      console.error('Error sending bulk Slack notification:', error);
       throw error;
     }
   }
@@ -79,13 +79,13 @@ export class SlackNotifier {
 
       const response = await this.client.chat.postMessage({
         channel: this.channelId,
-        text: "Monthly Time Entry Summary",
+        text: 'Monthly Time Entry Summary',
         blocks: blocks,
       });
 
       return response;
     } catch (error) {
-      console.error("Error sending monthly Slack notification:", error);
+      console.error('Error sending monthly Slack notification:', error);
       throw error;
     }
   }
@@ -95,13 +95,13 @@ export class SlackNotifier {
     date: Date | string
   ): any[] {
     const blocks = [];
-    const dateStr = moment(date).format("dddd, MMMM D, YYYY");
+    const dateStr = moment(date).format('dddd, MMMM D, YYYY');
 
     // Header
     blocks.push({
-      type: "header",
+      type: 'header',
       text: {
-        type: "plain_text",
+        type: 'plain_text',
         text: `Time Entry Summary for ${dateStr}`,
         emoji: true,
       },
@@ -111,18 +111,18 @@ export class SlackNotifier {
     const missingEntries = results.filter((r) => r.isMissing);
     if (missingEntries.length > 0) {
       blocks.push({
-        type: "section",
+        type: 'section',
         text: {
-          type: "mrkdwn",
-          text: "🔔 *Missing Time Entries*",
+          type: 'mrkdwn',
+          text: '🔔 *Missing Time Entries*',
         },
       });
 
       missingEntries.forEach((result) => {
         blocks.push({
-          type: "section",
+          type: 'section',
           text: {
-            type: "mrkdwn",
+            type: 'mrkdwn',
             text: `• ${result.user}`,
           },
         });
@@ -135,25 +135,25 @@ export class SlackNotifier {
     );
     if (suspiciousEntries.length > 0) {
       blocks.push({
-        type: "section",
+        type: 'section',
         text: {
-          type: "mrkdwn",
-          text: "⚠️ *Suspicious Entries*",
+          type: 'mrkdwn',
+          text: '⚠️ *Suspicious Entries*',
         },
       });
 
       suspiciousEntries.forEach((result) => {
         result.suspiciousEntries?.forEach((entry) => {
-          let issueText = "";
-          if (entry.type === "long_duration") {
+          let issueText = '';
+          if (entry.type === 'long_duration') {
             issueText = `• ${
               result.user
             } - Long duration entry detected (${entry.duration?.toFixed(
               1
             )} hours)`;
-          } else if (entry.type === "large_gap") {
+          } else if (entry.type === 'large_gap') {
             issueText = `• ${result.user} - Large gap detected between entries (${entry.gapStartTime} to ${entry.gapEndTime})`;
-          } else if (entry.type === "insufficient_hours") {
+          } else if (entry.type === 'insufficient_hours') {
             issueText = `• ${
               result.user
             } - Short duration entry detected (${entry.totalHours?.toFixed(
@@ -162,9 +162,9 @@ export class SlackNotifier {
           }
 
           blocks.push({
-            type: "section",
+            type: 'section',
             text: {
-              type: "mrkdwn",
+              type: 'mrkdwn',
               text: issueText,
             },
           });
@@ -173,17 +173,17 @@ export class SlackNotifier {
     }
 
     // Add divider
-    blocks.push({ type: "divider" });
+    blocks.push({ type: 'divider' });
 
     // Footer
     blocks.push({
-      type: "context",
+      type: 'context',
       elements: [
         {
-          type: "mrkdwn",
+          type: 'mrkdwn',
           text: `Report generated at ${moment()
-            .tz("Asia/Kolkata")
-            .format("HH:mm")} IST`,
+            .tz('Asia/Kolkata')
+            .format('HH:mm')} IST`,
         },
       ],
     });
@@ -196,7 +196,7 @@ export class SlackNotifier {
     date: Date | string
   ): string | null {
     const parts = [];
-    const dateStr = moment(date).format("dddd, MMMM D, YYYY");
+    const dateStr = moment(date).format('dddd, MMMM D, YYYY');
 
     if (analysis.isMissing && analysis.missingHours !== undefined) {
       parts.push(
@@ -206,13 +206,13 @@ export class SlackNotifier {
 
     if (analysis.suspiciousEntries) {
       analysis.suspiciousEntries.forEach((entry) => {
-        if (entry.type === "long_duration" && entry.duration !== undefined) {
+        if (entry.type === 'long_duration' && entry.duration !== undefined) {
           parts.push(
             `⚠️ *Long Duration Entry*\nAn entry on ${dateStr} is ${entry.duration.toFixed(
               1
             )} hours long.`
           );
-        } else if (entry.type === "large_gap" && entry.gap !== undefined) {
+        } else if (entry.type === 'large_gap' && entry.gap !== undefined) {
           parts.push(
             `⚠️ *Large Gap Detected*\nThere's a ${entry.gap.toFixed(
               1
@@ -222,18 +222,18 @@ export class SlackNotifier {
       });
     }
 
-    return parts.length > 0 ? parts.join("\n\n") : null;
+    return parts.length > 0 ? parts.join('\n\n') : null;
   }
 
   private _buildBlocks(analysis: Analysis, date: Date | string): any[] {
     const blocks = [];
-    const dateStr = moment(date).format("dddd, MMMM D, YYYY");
+    const dateStr = moment(date).format('dddd, MMMM D, YYYY');
 
     // Header
     blocks.push({
-      type: "header",
+      type: 'header',
       text: {
-        type: "plain_text",
+        type: 'plain_text',
         text: `Time Entry Review for ${dateStr}`,
         emoji: true,
       },
@@ -241,16 +241,16 @@ export class SlackNotifier {
 
     // Summary section
     blocks.push({
-      type: "section",
+      type: 'section',
       fields: [
         {
-          type: "mrkdwn",
+          type: 'mrkdwn',
           text: `*Hours Logged:*\n${analysis.totalHours}`,
         },
         {
-          type: "mrkdwn",
+          type: 'mrkdwn',
           text: `*Status:*\n${
-            analysis.isMissing ? "❌ Incomplete" : "✅ Complete"
+            analysis.isMissing ? '❌ Incomplete' : '✅ Complete'
           }`,
         },
       ],
@@ -259,9 +259,9 @@ export class SlackNotifier {
     // Missing hours alert
     if (analysis.isMissing && analysis.missingHours !== undefined) {
       blocks.push({
-        type: "section",
+        type: 'section',
         text: {
-          type: "mrkdwn",
+          type: 'mrkdwn',
           text: `🔔 *Missing Hours Alert*\nYou need to log ${analysis.missingHours.toFixed(
             1
           )} more hours for this day.`,
@@ -272,16 +272,16 @@ export class SlackNotifier {
     // Suspicious entries
     if (analysis.suspiciousEntries) {
       analysis.suspiciousEntries.forEach((entry) => {
-        if (entry.type === "long_duration" && entry.duration !== undefined) {
+        if (entry.type === 'long_duration' && entry.duration !== undefined) {
           const text = `⚠️ *Long Duration Entry Detected*\n• Duration: ${entry.duration.toFixed(
             1
           )} hours\n• Description: ${
-            entry.entry?.description || "No description"
+            entry.entry?.description || 'No description'
           }`;
           blocks.push({
-            type: "section",
+            type: 'section',
             text: {
-              type: "mrkdwn",
+              type: 'mrkdwn',
               text,
             },
           });

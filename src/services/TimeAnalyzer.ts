@@ -1,16 +1,15 @@
-import moment from "moment-timezone";
-import { MonthlyAnalyzer } from "./analyzers/MonthlyAnalyzer";
-import { TimeEntry } from "./analyzers/BaseAnalyzer";
-import { User } from "../config/UserConfig";
+import moment from 'moment-timezone';
+import { MonthlyAnalyzer } from './analyzers/MonthlyAnalyzer';
+import { TimeEntry } from './analyzers/BaseAnalyzer';
+import { User } from '../config/UserConfig';
 
 // Constants
-const IST_TIMEZONE = "Asia/Kolkata";
 const REQUIRED_HOURS = 8;
 const SUSPICIOUS_GAP_HOURS = 4;
 const SUSPICIOUS_DURATION_HOURS = 10;
 
 export interface SuspiciousEntry {
-  type: "long_duration" | "large_gap" | "insufficient_hours";
+  type: 'long_duration' | 'large_gap' | 'insufficient_hours';
   entry?: TimeEntry;
   duration?: number;
   startTime?: string;
@@ -63,7 +62,7 @@ class TimeAnalyzer {
     this.monthlyAnalyzer = new MonthlyAnalyzer();
   }
 
-  analyzeEntries(entries: TimeEntry[], date: Date | string): AnalysisResult {
+  analyzeEntries(entries: TimeEntry[]): AnalysisResult {
     if (!entries || entries.length === 0) {
       return {
         totalHours: 0,
@@ -82,7 +81,7 @@ class TimeAnalyzer {
     const suspiciousEntries: SuspiciousEntry[] = [];
 
     // Debug log for entries analysis
-    console.log("Analyzing entries:", {
+    console.log('Analyzing entries:', {
       totalEntries: entries.length,
       sortedEntries: sortedEntries.map((e) => ({
         start: moment(e.start).format(),
@@ -113,11 +112,11 @@ class TimeAnalyzer {
       // Check for suspiciously long entries
       if (duration > SUSPICIOUS_DURATION_HOURS) {
         suspiciousEntries.push({
-          type: "long_duration",
+          type: 'long_duration',
           entry,
           duration,
-          startTime: start.format("HH:mm"),
-          endTime: end.format("HH:mm"),
+          startTime: start.format('HH:mm'),
+          endTime: end.format('HH:mm'),
         });
       }
 
@@ -128,12 +127,12 @@ class TimeAnalyzer {
 
         if (gap > SUSPICIOUS_GAP_HOURS) {
           suspiciousEntries.push({
-            type: "large_gap",
+            type: 'large_gap',
             before: sortedEntries[index - 1],
             after: entry,
             gap,
-            gapStartTime: prevEnd.format("HH:mm"),
-            gapEndTime: start.format("HH:mm"),
+            gapStartTime: prevEnd.format('HH:mm'),
+            gapEndTime: start.format('HH:mm'),
           });
         }
       }
@@ -142,7 +141,7 @@ class TimeAnalyzer {
     // Check for insufficient total hours (only if some hours were logged)
     if (totalHours > 0 && totalHours < REQUIRED_HOURS) {
       suspiciousEntries.push({
-        type: "insufficient_hours",
+        type: 'insufficient_hours',
         totalHours,
         missingHours: REQUIRED_HOURS - totalHours,
       });
