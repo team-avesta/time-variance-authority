@@ -1,0 +1,32 @@
+{
+  "name": "time-variance-authority",
+  "version": "1.0.0",
+  "description": "Time tracking and analysis tool",
+  "main": "dist/index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.147",
+    "@types/node": "^22.13.5",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@slack/web-api": "^7.8.0",
+    "@types/axios": "^0.14.4",
+    "@types/moment-timezone": "^0.5.30",
+    "axios": "^1.7.9",
+    "moment-timezone": "^0.5.47"
+  }
+}

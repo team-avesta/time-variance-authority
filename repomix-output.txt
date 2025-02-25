@@ -1,0 +1,2309 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+.repomix/
+  bundles.json
+config/
+  UserConfig.js
+  users.json
+docs/
+  rules/
+    alert-rules.md
+    holiday-rules.md
+    time-rules.md
+  technical/
+    implementation-details.md
+  templates/
+    holiday-config-template.json
+    user-config-template.json
+services/
+  analyzers/
+    BaseAnalyzer.js
+    MonthlyAnalyzer.js
+  formatters/
+    BaseFormatter.js
+    MonthlyFormatter.js
+  ClockifyClient.js
+  SlackNotifier.js
+  TimeAnalyzer.js
+.gitignore
+index.js
+README.md
+
+================================================================
+Files
+================================================================
+
+================
+File: .repomix/bundles.json
+================
+{
+  "bundles": {}
+}
+
+================
+File: config/UserConfig.js
+================
+const users = require("./users.json");
+
+class UserConfig {
+  constructor(usersEnv) {
+    const data = usersEnv ? JSON.parse(usersEnv) : users;
+    this.users = data.users || [];
+    this.teams = data.teams || {};
+  }
+
+  getAllUsers() {
+    return this.users;
+  }
+
+  getEnabledUsers() {
+    return this.users.filter((user) => user.checkEnabled);
+  }
+
+  getUserById(id) {
+    return this.users.find((user) => user.id === id);
+  }
+
+  getUsersByTeam(team) {
+    return this.users.filter((user) => user.team === team);
+  }
+
+  getTeams() {
+    return this.teams;
+  }
+}
+
+module.exports = UserConfig;
+
+================
+File: config/users.json
+================
+{
+    "users": [
+      {
+        "id": "6641df236d87810061f4f5d1",
+        "name": "Harish Vaja",
+        "email": "hvaja@vmg.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamAlpha"
+      },
+      {
+        "id": "661de7a7281a4e4ce8b924e0",
+        "name": "Parshva Shah",
+        "email": "pshah@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamAlpha"
+      },
+      {
+        "id": "63b257c136c07f7ca0f6d262",
+        "name": "Bhautik Desai",
+        "email": "bdesai@vmg.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamAlpha"
+      },
+      {
+        "id": "63b264c0ced282028f841cdd",
+        "name": "rutu patel",
+        "email": "rpatel@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamAlpha"
+      },
+      {
+        "id": "64462e44ccb2f377e884f1ed",
+        "name": "Anjali Bhansari",
+        "email": "abhansari@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamAlpha"
+      },
+      {
+        "email": "yvekaria@realestateview.com.au",
+        "name": "Yash Vekaria",
+        "id": "60bf1eb68747147d9ab99429",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamAlpha"
+      },
+      {
+        "email": "krajput@vmg.com.au",
+        "name": "Kuldeepsinh rajput",
+        "id": "6656c85e819bc975a0ca9213",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamAlpha"
+      },
+      {
+        "email": "smakwana@vmg.com.au",
+        "name": "Sahil Makwana",
+        "id": "6641df236d87810061f4f5d2",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamAlpha"
+      },
+      {
+        "email": "spatel@view.com.au",
+        "name": "Shivani Patel",
+        "id": "6614e25f6b82d163d3dd238f",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamAlpha"
+      },
+      {
+        "email": "jadeshara@realestateview.com.au",
+        "name": "jeet adeshara",
+        "id": "645874fd1ba320738dc01157",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamBravo"
+      },
+      {
+        "email": "skaur@realestateview.com.au",
+        "name": "Simran Kaur",
+        "id": "6434da0a1f74581c0a35428b",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamBravo"
+      },
+      {
+        "email": "akansara@vmg.com.au",
+        "name": "Akshat Kansara",
+        "id": "6641df236d87810061f4f5d3",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamBravo"
+      },
+      {
+        "email": "hparmar@realestateview.com.au",
+        "name": "Harsh Parmar",
+        "id": "6385e5e245a83f37812f9424",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamBravo"
+      },
+      {
+        "email": "hthackar@realestateview.com.au",
+        "name": "Hiral",
+        "id": "614d54418e27d852eb0376ea",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamBravo"
+      },
+      {
+        "id": "65ee98e77ec1182e08fcde18",
+        "name": "Uday Naliyapara",
+        "email": "unaliyapara@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamBravo"
+      },
+      {
+        "id": "6455da5728cb6f38a14dd0b3",
+        "name": "Aditya Singh",
+        "email": "asingh@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamCharlie"
+      },
+      {
+        "id": "659775f85ac2a9141c1c0da7",
+        "name": "Dev M Shah",
+        "email": "dshah@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamCharlie"
+      },
+      {
+        "id": "642aaa56bfd5607b5019b851",
+        "name": "Gordhan Chauhan",
+        "email": "gchauhan@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamCharlie"
+      },
+      {
+        "id": "660ba8437288ae7525d8839d",
+        "name": "Himanshu Rank",
+        "email": "hrank@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamCharlie"
+      },
+      {
+        "id": "6402c7e9b6030253b9407d3a",
+        "name": "Dhruvil Vasava",
+        "email": "dvasava@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamCharlie"
+      },
+      {
+        "id": "65cef3ded569cd704bf3924f",
+        "name": "Denish Satasiya",
+        "email": "dsatasiya@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamCharlie"
+      },
+      {
+        "id": "6628aa1424e5bf66b65753d4",
+        "name": "Rahul Lakhvara",
+        "email": "rlakhvara@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamCharlie"
+      },
+      {
+        "id": "60bf1eb68747147d9ab9942a",
+        "name": "Aakash Sanandiya",
+        "email": "asanandiya@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDelta"
+      },
+      {
+        "id": "65eec00593d27d535fe12876",
+        "name": "Aparmar",
+        "email": "aparmar@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDelta"
+      },
+      {
+        "id": "63b264c0ced282028f841cde",
+        "name": "Vishvjit Vanar",
+        "email": "vvanar@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDelta"
+      },
+      {
+        "id": "65eec00593d27d535fe12877",
+        "name": "Hemant Kumar",
+        "email": "hkumar@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDelta"
+      },
+      {
+        "id": "6402c7e9b6030253b9407d39",
+        "name": "Devraj Rajput",
+        "email": "drajput@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDelta"
+      },
+      {
+        "id": "6684de7c90f19a47ee5f0aec",
+        "name": "Jalpa Patel",
+        "email": "jpatel@vmg.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDelta"
+      },
+      {
+        "id": "6200ae84d519d50addd7fd9a",
+        "name": "Harsh Gandhi",
+        "email": "hgandhi@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamMobileApp"
+      },
+      {
+        "id": "6594dc733e0b94082340e27a",
+        "name": "Pramit Agravat",
+        "email": "pagravat@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamMobileApp"
+      },
+      {
+        "id": "6594dc733e0b94082340e27b",
+        "name": "Brijesh Renuka",
+        "email": "brenuka@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamMobileApp"
+      },
+      {
+        "id": "65bb3933055db743fb0ba5df",
+        "name": "Mansi Lakhatariya",
+        "email": "mlakhatariya@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamMobileApp"
+      },
+      {
+        "id": "660ba8437288ae7525d8839c",
+        "name": "Nirali Timbadiya",
+        "email": "ntimbadiya@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamMobileApp"
+      },
+      {
+        "id": "642c12f86971f66225b8fb4e",
+        "name": "Raj Chavada",
+        "email": "rchavada@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamMobileApp"
+      },
+      {
+        "id": "6684de7c90f19a47ee5f0aed",
+        "name": "Keval Jaiswal",
+        "email": "kjaiswal@vmg.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamMobileApp"
+      },
+      {
+        "id": "6736cdda1f7f6f6182bb455a",
+        "name": "Vivek Satasiya",
+        "email": "vivek@avestatechnologies.com",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamZenuProject"
+      },
+      {
+        "id": "666031c1472314478c8857cc",
+        "name": "Gopal Tripathi",
+        "email": "gtripathi@vmg.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamZenuProject"
+      },
+      {
+        "id": "65fbc10457bb57198cb391f4",
+        "name": "Rajan Amrutiya",
+        "email": "ramrutiya@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamZenuProject"
+      },
+      {
+        "id": "6455da5728cb6f38a14dd0b6",
+        "name": "Parth Patel",
+        "email": "ppatel2@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamZenuProject"
+      },
+      {
+        "id": "60bf1eb68747147d9ab9942c",
+        "name": "Gaurav Soni",
+        "email": "gsoni@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDataAndAnalytics"
+      },
+      {
+        "id": "6402c7e9b6030253b9407d3b",
+        "name": "Krunal Ambaliya",
+        "email": "kambaliya@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDataAndAnalytics"
+      },
+      {
+        "id": "6455da5728cb6f38a14dd0b5",
+        "name": "Utsav Ghava",
+        "email": "ughava@vmg.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDataAndAnalytics"
+      },
+      {
+        "id": "659775f85ac2a9141c1c0da6",
+        "name": "Aryan Patel",
+        "email": "apatel@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDataAndAnalytics"
+      },
+      {
+        "id": "6455da5728cb6f38a14dd0b2",
+        "name": "Bhavin Pampaniya",
+        "email": "bpampaniya@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamDataAndAnalytics"
+      },
+      {
+        "id": "60bf1eb68747147d9ab9942b",
+        "name": "Vinay Bhinde",
+        "email": "vbhinde@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamInfra"
+      },
+      {
+        "id": "6385e5e245a83f37812f9425",
+        "name": "Madhav Pujara",
+        "email": "mpujara@realestateview.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamInfra"
+      },
+      {
+        "id": "6616373ad88e6d142061b332",
+        "name": "Pushpakant Hepat",
+        "email": "phepat@view.com.au",
+        "checkEnabled": true,
+        "requiredHours": 8,
+        "notifySlack": true,
+        "team": "teamInfra"
+      }
+    ],
+    "teams": {
+      "teamAlpha": {
+        "name": "Team Alpha"
+      },
+      "teamBravo": {
+        "name": "Team Bravo"
+      },
+      "teamCharlie": {
+        "name": "Team Charlie"
+      },
+      "teamDelta": {
+        "name": "Team Delta"
+      },
+      "teamMobileApp": {
+        "name": "Team Mobile App"
+      },
+      "teamZenuProject": {
+        "name": "Team Zenu Project"
+      },
+      "teamInfra": {
+        "name": "Team Infra"
+      },
+      "teamDataAndAnalytics": {
+        "name": "Team Data and Analytics"
+      }
+    }
+  }
+
+================
+File: docs/rules/alert-rules.md
+================
+# Alert Rules
+
+## 🚨 Alert Types
+
+### 1. Missing Hours Alert
+
+**Trigger Conditions:**
+
+- Total daily hours < 8 hours
+- Only on working days
+- Excludes holidays and weekends
+
+**Alert Format:**
+
+- User name and email
+- Total hours logged
+- Missing hours amount
+- Date of missing entries
+
+### 2. Suspicious Duration Alert
+
+**Trigger Conditions:**
+
+- Single time entry > 10 hours
+- Multiple entries in same time period
+- Overlapping time entries
+
+**Alert Format:**
+
+- Entry details (start/end time)
+- Duration of suspicious entry
+- Project and task information
+- User name and email
+
+### 3. Gap Alert
+
+**Trigger Conditions:**
+
+- Gap between entries > 4 hours
+- Only during working hours
+- Excludes lunch time gaps
+
+**Alert Format:**
+
+- Gap start and end time
+- Gap duration
+- Surrounding entry details
+- User name and email
+
+## 📊 Alert Grouping
+
+### Daily Report Grouping
+
+- Grouped by user
+- Sorted by team
+- All alert types included
+- Summary at top of report
+
+### Monthly Report Grouping
+
+- Grouped by team
+- Summary of alert patterns
+- Trend analysis
+- Team-wise statistics
+
+## 🔔 Notification Channels
+
+### Slack Notifications
+
+- Sent to configured Slack channel
+- Uses formatted blocks for readability
+- Includes direct links to Clockify
+- Mentions relevant team leads
+
+## 🎯 Alert Priority
+
+### High Priority
+
+- Missing entire day's entries
+- Multiple overlapping entries
+- Gaps > 8 hours
+
+### Medium Priority
+
+- Single missing hour alerts
+- Gaps between 4-8 hours
+- Long duration entries
+
+### Low Priority
+
+- Minor overlaps
+- Suspicious patterns
+- Non-standard hour distributions
+
+## 🔄 Alert Lifecycle
+
+### Generation
+
+1. Alert condition detected
+2. Alert data collected
+3. Priority assigned
+4. Notification formatted
+
+### Delivery
+
+1. Grouped with other alerts
+2. Formatted for channel
+3. Sent to Slack
+4. Delivery confirmed
+
+### Resolution
+
+- No explicit resolution required
+- Resolved by correcting time entries
+- New entries automatically validated
+
+## ⚙️ Configuration
+
+### Thresholds
+
+- Minimum daily hours: 8
+- Maximum single entry: 10 hours
+- Maximum gap: 4 hours
+- Overlap tolerance: 0 minutes
+
+### Timing
+
+- Daily check: 4:30 AM IST
+- Monthly check: 11:30 AM IST (Mondays)
+- Immediate alerts: None (batch processing only)
+
+## 🔄 Maintenance
+
+This document should be updated when:
+
+1. Alert thresholds change
+2. New alert types are added
+3. Alert format changes
+4. Notification channels are modified
+
+================
+File: docs/rules/holiday-rules.md
+================
+# Holiday Management Rules
+
+## 📅 Holiday Configuration
+
+### Format Requirements
+
+- Dates must be in `YYYY-MM-DD` format
+- Multiple dates are comma-separated
+- No spaces between dates in configuration
+- Example: `2025-03-14,2025-08-15,2025-10-02`
+
+### Configuration Location
+
+- Stored in Lambda environment variable: `HOLIDAYS`
+- Can be updated through AWS Lambda configuration
+- Changes take effect immediately after update
+
+## 🎯 Holiday Impact
+
+### Time Tracking
+
+- No time entries required on holidays
+- Holiday dates are excluded from:
+  - Daily checks
+  - Working days calculations
+  - Missing hours alerts
+
+### Reporting
+
+- Holidays are skipped in daily reports
+- Monthly reports account for holidays in total hour calculations
+- Previous working day calculations skip holidays
+
+## 🔄 Holiday Update Process
+
+### Adding New Holidays
+
+1. Format new holiday dates in `YYYY-MM-DD`
+2. Append to existing holiday list with comma
+3. Update Lambda environment variable
+4. No deployment needed - takes effect immediately
+
+### Removing Holidays
+
+1. Remove date from comma-separated list
+2. Ensure no trailing/leading commas
+3. Update Lambda environment variable
+4. Takes effect immediately
+
+## ⚠️ Important Considerations
+
+### Timezone
+
+- All holiday dates are considered in IST (Asia/Kolkata)
+- Holiday period is full day (00:00 to 23:59 IST)
+
+### Validation
+
+- Invalid date formats will be ignored
+- Duplicate dates are automatically handled
+- Weekend holidays should still be included for clarity
+
+## 📝 Current Holiday List (2025)
+
+- March 14, 2025 (Friday)
+- August 9, 2025 (Saturday)
+- August 15, 2025 (Friday)
+- August 16, 2025 (Saturday)
+- October 2, 2025 (Thursday)
+
+## 🔄 Maintenance
+
+This document should be updated when:
+
+1. New holidays are added
+2. Holiday dates change
+3. Holiday handling logic changes
+4. Date format requirements change
+
+================
+File: docs/rules/time-rules.md
+================
+# Time Tracking Rules
+
+## ⏰ Daily Time Requirements
+
+### Required Hours
+
+- **Minimum Hours**: 8 hours per working day
+- **Working Hours**: Standard working hours are tracked in IST (Asia/Kolkata timezone)
+- **Grace Period**: None (entries must be logged for the correct day)
+
+### Time Entry Thresholds
+
+- **Maximum Single Entry**: 10 hours (entries exceeding this are flagged)
+- **Maximum Gap**: 4 hours (gaps between entries exceeding this are flagged)
+- **Minimum Entry Duration**: No minimum (but should be meaningful)
+
+## 🚨 Alert Conditions
+
+### Missing Hours Alert
+
+- Triggered when total daily hours < 8 hours
+- Calculated at the end of each working day
+- Reported in the next day's morning report
+
+### Suspicious Entry Alert
+
+Triggered for:
+
+- Single entries > 10 hours
+- Gaps between entries > 4 hours
+- Overlapping time entries
+- Multiple entries in same time period
+
+## 📅 Working Day Definition
+
+### Standard Working Days
+
+- Monday through Friday
+- Excluding weekends (Saturday and Sunday)
+- Excluding configured holidays
+
+### Time Calculation
+
+- Time is calculated in hours with two decimal places
+- Entries are considered in IST (Asia/Kolkata) timezone
+- Daily totals are calculated from 00:00 to 23:59 IST
+
+## 🔄 Update Process
+
+These rules should be updated when:
+
+1. Time requirements change
+2. Alert thresholds are modified
+3. Working day definitions change
+4. Timezone requirements change
+
+## 📊 Reporting Schedule
+
+### Daily Reports
+
+- Run at 4:30 AM IST (Mon-Fri)
+- Checks previous working day's entries
+- Sent to configured Slack channel
+
+### Monthly Reports
+
+- Run at 11:30 AM IST (Every Monday)
+- Summarizes current month's data
+- Groups data by teams
+- Includes all users regardless of daily check settings
+
+================
+File: docs/technical/implementation-details.md
+================
+# Implementation Details
+
+## 🔄 Rate Limiting
+
+### Clockify API
+
+- Requests are queued with 50ms delay between requests
+- Batch processing of users (5 users per batch)
+- 1-second delay between batches
+- Auto-retry on rate limit (429) responses
+
+## 📊 Data Processing
+
+### Time Calculations
+
+- All times are stored in UTC
+- All business logic uses IST (Asia/Kolkata)
+- Hours are rounded to 2 decimal places
+- Time entries are sorted chronologically for analysis
+
+### Pagination
+
+- Time entries are fetched in pages of 50
+- Automatic handling of multiple pages
+- Continues until no more entries are found
+
+## 👥 User Management
+
+### User Configuration
+
+- Stored in `users.json`
+- Each user has:
+  - `id`: Clockify user ID
+  - `name`: Display name
+  - `email`: Email address
+  - `checkEnabled`: Whether to include in daily checks
+  - `requiredHours`: Daily hours requirement (default: 8)
+  - `notifySlack`: Whether to send Slack notifications
+  - `team`: Team assignment
+
+### Team Structure
+
+- teamAlpha
+- teamBravo
+- teamCharlie
+- teamDelta
+- teamMobileApp
+- teamZenuProject
+- teamInfra
+- teamDataAndAnalytics
+
+## 🔔 Notification System
+
+### Slack Message Formatting
+
+- Uses Slack Block Kit for rich formatting
+- Team-specific emojis for visual distinction
+- Hierarchical organization (Team → Member → Details)
+- Timestamps in IST format
+
+### Alert Types
+
+1. Individual Notifications
+
+   - Direct messages for personal time issues
+   - Includes specific entry details
+   - Links to Clockify entries
+
+2. Daily Summary
+
+   - Grouped by team
+   - Missing entries section
+   - Suspicious entries section
+   - Generated at 4:30 AM IST
+
+3. Monthly Report
+   - Team-wise grouping
+   - Total hours comparison
+   - Progress tracking
+   - Generated at 11:30 AM IST (Mondays)
+
+## ⚙️ Error Handling
+
+### API Errors
+
+- Automatic retry on rate limits
+- Error logging with context
+- Graceful degradation on partial failures
+- Batch isolation (single user failure doesn't affect others)
+
+### Data Validation
+
+- Invalid date format handling
+- Missing entry detection
+- Duplicate entry checking
+- Timezone conversion safety
+
+## 🔄 Process Flow
+
+### Daily Check
+
+1. Get previous working day
+2. Fetch enabled users
+3. Process in batches
+4. Analyze time entries
+5. Send notifications
+
+### Monthly Check
+
+1. Calculate month range
+2. Fetch all users
+3. Process in batches
+4. Group by teams
+5. Calculate expected hours
+6. Send monthly report
+
+================
+File: docs/templates/holiday-config-template.json
+================
+{
+  "holidays": [
+    {
+      "date": "2025-03-14",
+      "description": "Holiday Name",
+      "type": "public"
+    },
+    {
+      "date": "2025-08-09",
+      "description": "Holiday Name",
+      "type": "public"
+    },
+    {
+      "date": "2025-08-15",
+      "description": "Holiday Name",
+      "type": "public"
+    },
+    {
+      "date": "2025-08-16",
+      "description": "Holiday Name",
+      "type": "public"
+    },
+    {
+      "date": "2025-10-02",
+      "description": "Holiday Name",
+      "type": "public"
+    }
+  ],
+  "format": {
+    "dateFormat": "YYYY-MM-DD",
+    "timezone": "Asia/Kolkata",
+    "types": ["public", "company", "optional"],
+    "envFormat": "comma-separated dates only"
+  },
+  "examples": {
+    "envVariable": "2025-03-14,2025-08-09,2025-08-15,2025-08-16,2025-10-02",
+    "notes": [
+      "Dates must be in YYYY-MM-DD format",
+      "No spaces between dates in env variable",
+      "Include weekend holidays for clarity",
+      "All dates are considered in IST timezone"
+    ]
+  }
+}
+
+================
+File: docs/templates/user-config-template.json
+================
+
+
+================
+File: services/analyzers/BaseAnalyzer.js
+================
+const moment = require("moment-timezone");
+
+class BaseAnalyzer {
+  constructor() {
+    this.IST_TIMEZONE = "Asia/Kolkata";
+  }
+
+  calculateTotalHours(entries) {
+    if (!entries || entries.length === 0) {
+      return 0;
+    }
+
+    return entries.reduce((total, entry) => {
+      const start = moment(entry.start);
+      const end = moment(entry.end);
+      const duration = moment.duration(end.diff(start)).asHours();
+      return total + duration;
+    }, 0);
+  }
+
+  roundHours(hours) {
+    return Math.round(hours * 100) / 100;
+  }
+}
+
+module.exports = BaseAnalyzer;
+
+================
+File: services/analyzers/MonthlyAnalyzer.js
+================
+const BaseAnalyzer = require("./BaseAnalyzer");
+
+class MonthlyAnalyzer extends BaseAnalyzer {
+  analyzeEntries(entries, user) {
+    const totalHours = this.roundHours(this.calculateTotalHours(entries));
+
+    return {
+      user: user.name,
+      team: user.team,
+      totalHours,
+    };
+  }
+
+  groupByTeam(results) {
+    const teamTotals = {};
+    let grandTotal = 0;
+
+    results.forEach((result) => {
+      if (!teamTotals[result.team]) {
+        teamTotals[result.team] = {
+          name: result.team,
+          totalHours: 0,
+          members: [],
+        };
+      }
+
+      teamTotals[result.team].members.push({
+        name: result.user,
+        hours: result.totalHours,
+      });
+
+      teamTotals[result.team].totalHours += result.totalHours;
+      grandTotal += result.totalHours;
+    });
+
+    return {
+      teams: teamTotals,
+      grandTotal: this.roundHours(grandTotal),
+    };
+  }
+}
+
+module.exports = MonthlyAnalyzer;
+
+================
+File: services/formatters/BaseFormatter.js
+================
+class BaseFormatter {
+    createHeaderBlock(text) {
+      return {
+        type: "header",
+        text: {
+          type: "plain_text",
+          text,
+          emoji: true,
+        },
+      };
+    }
+  
+    createSectionBlock(text) {
+      return {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text,
+        },
+      };
+    }
+  
+    createDividerBlock() {
+      return { type: "divider" };
+    }
+  
+    createContextBlock(text) {
+      return {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text,
+          },
+        ],
+      };
+    }
+  }
+  
+  module.exports = BaseFormatter;
+
+================
+File: services/formatters/MonthlyFormatter.js
+================
+const moment = require("moment-timezone");
+const BaseFormatter = require("./BaseFormatter");
+
+class MonthlyFormatter extends BaseFormatter {
+  formatReport(results, monthDate, totalExpectedHours) {
+    const blocks = [];
+    const monthStr = moment(monthDate).format("MMMM YYYY");
+
+    // Add header
+    blocks.push(
+      this.createHeaderBlock(`📊 Time Entry Summary for ${monthStr}`)
+    );
+
+    // Add expected hours subtitle
+    blocks.push(
+      this.createSectionBlock(`⏳ Expected Hours: ${totalExpectedHours}`)
+    );
+
+    // Add divider after subtitle
+    blocks.push(this.createDividerBlock());
+
+    // Add team sections
+    Object.entries(results.teams).forEach(([teamId, team]) => {
+      if (team.members.length === 0) return;
+
+      // Team header with total hours
+      const teamEmoji = this.getTeamEmoji(teamId);
+      blocks.push(
+        this.createSectionBlock(
+          `${teamEmoji} *${team.name}* (${team.totalHours} hours)`
+        )
+      );
+
+      // Team members
+      const membersList = team.members
+        .sort((a, b) => b.hours - a.hours) // Sort by hours descending
+        .map((member) => `• ${member.name} (${member.hours} hours)`)
+        .join("\n");
+
+      if (membersList) {
+        blocks.push(this.createSectionBlock(membersList));
+        blocks.push(this.createDividerBlock());
+      }
+    });
+
+    // Add grand total
+    blocks.push(
+      this.createSectionBlock(`💫 *Total Hours: ${results.grandTotal}*`)
+    );
+
+    // Add footer
+    blocks.push(
+      this.createContextBlock(
+        `⏰ Report generated at ${moment()
+          .tz("Asia/Kolkata")
+          .format("HH:mm")} IST`
+      )
+    );
+
+    return blocks;
+  }
+
+  getTeamEmoji(teamId) {
+    const emojis = {
+      teamAlpha: "🔵",
+      teamBravo: "🟣",
+      teamCharlie: "🟡",
+      teamDelta: "🟢",
+      teamMobileApp: "📱",
+      teamZenuProject: "⭐",
+      teamInfra: "🔧",
+      teamDataAndAnalytics: "📊",
+    };
+    return emojis[teamId] || "📌";
+  }
+}
+
+module.exports = MonthlyFormatter;
+
+================
+File: services/ClockifyClient.js
+================
+const axios = require("axios");
+const moment = require("moment-timezone");
+
+class ClockifyClient {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+    this.baseURL = "https://api.clockify.me/api/v1";
+    this.requestQueue = [];
+    this.isProcessing = false;
+    this.rateLimitDelay = 50; // 50ms delay between requests (20 requests per second to be safe)
+  }
+
+  async processQueue() {
+    if (this.isProcessing) return;
+    this.isProcessing = true;
+
+    while (this.requestQueue.length > 0) {
+      const { config, resolve, reject } = this.requestQueue.shift();
+      try {
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.rateLimitDelay)
+        );
+        const response = await this._makeRequest(config);
+        resolve(response);
+      } catch (error) {
+        if (error.response?.status === 429) {
+          // Rate limit hit
+          console.log("Rate limit hit, waiting before retry...");
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          this.requestQueue.push({ config, resolve, reject });
+        } else {
+          reject(error);
+        }
+      }
+    }
+
+    this.isProcessing = false;
+  }
+
+  async _makeRequest(config) {
+    return axios({
+      ...config,
+      headers: {
+        "X-Api-Key": this.apiKey,
+        ...config.headers,
+      },
+    });
+  }
+
+  enqueueRequest(config) {
+    return new Promise((resolve, reject) => {
+      this.requestQueue.push({ config, resolve, reject });
+      this.processQueue();
+    });
+  }
+
+  async getWorkspaces() {
+    const response = await this.enqueueRequest({
+      method: "GET",
+      url: `${this.baseURL}/workspaces`,
+    });
+    return response.data;
+  }
+
+  async getUserInfo() {
+    const response = await this.enqueueRequest({
+      method: "GET",
+      url: `${this.baseURL}/user`,
+    });
+    return response.data;
+  }
+
+  async getTimeEntries(workspaceId, userId, startDate, endDate) {
+    console.log(
+      `Fetching entries for ${userId} from ${startDate.format()} to ${endDate.format()}`
+    );
+
+    // Add detailed debug logging
+    console.log("DEBUG - API Request Details:", {
+      userId,
+      startISO: startDate.toISOString(),
+      endISO: endDate.toISOString(),
+      startLocal: startDate.format(),
+      endLocal: endDate.format(),
+      startUTC: startDate.utc().format(),
+      endUTC: endDate.utc().format(),
+      timezone: startDate.tz(),
+    });
+
+    const entries = [];
+    let page = 1;
+    const pageSize = 50;
+
+    while (true) {
+      const requestParams = {
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        page: page,
+        "page-size": pageSize,
+      };
+
+      // Log the exact API request for debugging
+      console.log("DEBUG - Making Clockify API request:", {
+        url: `${this.baseURL}/workspaces/${workspaceId}/user/${userId}/time-entries`,
+        params: requestParams,
+      });
+
+      const response = await this.enqueueRequest({
+        method: "GET",
+        url: `${this.baseURL}/workspaces/${workspaceId}/user/${userId}/time-entries`,
+        params: requestParams,
+      });
+
+      // Log the response status and data length
+      console.log("DEBUG - API Response:", {
+        status: response.status,
+        entriesCount: response.data.length,
+      });
+
+      const pageEntries = response.data;
+      entries.push(...pageEntries);
+
+      if (pageEntries.length < pageSize) break;
+      page++;
+    }
+
+    console.log(`Found ${entries.length} entries for user ${userId}`);
+    return entries;
+  }
+}
+
+module.exports = ClockifyClient;
+
+================
+File: services/SlackNotifier.js
+================
+const { WebClient } = require("@slack/web-api");
+const moment = require("moment-timezone");
+const MonthlyFormatter = require("./formatters/MonthlyFormatter");
+
+class SlackNotifier {
+  constructor(token, channelId) {
+    this.client = new WebClient(token);
+    this.channelId = channelId;
+    this.monthlyFormatter = new MonthlyFormatter();
+  }
+
+  async notifyChannel(analysis, date) {
+    try {
+      let message = this._buildMessage(analysis, date);
+      if (!message) return null; // No issues to report
+
+      const response = await this.client.chat.postMessage({
+        channel: this.channelId,
+        text: message,
+        blocks: this._buildBlocks(analysis, date),
+      });
+
+      return response;
+    } catch (error) {
+      console.error("Error sending Slack notification:", error);
+      throw error;
+    }
+  }
+
+  async notifyBulk(results, date) {
+    try {
+      // Send a summary message for all users
+      const summaryBlocks = this._buildSummaryBlocks(results, date);
+
+      const response = await this.client.chat.postMessage({
+        channel: this.channelId,
+        text: "Time Entry Summary Report",
+        blocks: summaryBlocks,
+      });
+
+      return response;
+    } catch (error) {
+      console.error("Error sending bulk Slack notification:", error);
+      throw error;
+    }
+  }
+
+  async notifyMonthly(results, monthDate, totalExpectedHours) {
+    try {
+      const blocks = this.monthlyFormatter.formatReport(
+        results,
+        monthDate,
+        totalExpectedHours
+      );
+
+      const response = await this.client.chat.postMessage({
+        channel: this.channelId,
+        text: "Monthly Time Entry Summary",
+        blocks: blocks,
+      });
+
+      return response;
+    } catch (error) {
+      console.error("Error sending monthly Slack notification:", error);
+      throw error;
+    }
+  }
+
+  _buildSummaryBlocks(results, date) {
+    const blocks = [];
+    const dateStr = moment(date).format("dddd, MMMM D, YYYY");
+
+    // Header
+    blocks.push({
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: `Time Entry Summary for ${dateStr}`,
+        emoji: true,
+      },
+    });
+
+    // Missing entries section (only for those with no entries)
+    const missingEntries = results.filter((r) => r.isMissing);
+    if (missingEntries.length > 0) {
+      blocks.push({
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: "🔔 *Missing Time Entries*",
+        },
+      });
+
+      missingEntries.forEach((result) => {
+        blocks.push({
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `• ${result.user}`,
+          },
+        });
+      });
+    }
+
+    // Suspicious entries section
+    const suspiciousEntries = results.filter(
+      (r) => r.suspiciousEntries && r.suspiciousEntries.length > 0
+    );
+    if (suspiciousEntries.length > 0) {
+      blocks.push({
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: "⚠️ *Suspicious Entries*",
+        },
+      });
+
+      suspiciousEntries.forEach((result) => {
+        result.suspiciousEntries.forEach((entry) => {
+          let issueText = "";
+          if (entry.type === "long_duration") {
+            issueText = `• ${
+              result.user
+            } - Long duration entry detected (${entry.duration.toFixed(
+              1
+            )} hours)`;
+          } else if (entry.type === "large_gap") {
+            issueText = `• ${result.user} - Large gap detected between entries (${entry.gapStartTime} to ${entry.gapEndTime})`;
+          } else if (entry.type === "insufficient_hours") {
+            issueText = `• ${
+              result.user
+            } - Short duration entry detected (${entry.totalHours.toFixed(
+              1
+            )} hours)`;
+          }
+
+          blocks.push({
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: issueText,
+            },
+          });
+        });
+      });
+    }
+
+    // Add divider
+    blocks.push({ type: "divider" });
+
+    // Footer
+    blocks.push({
+      type: "context",
+      elements: [
+        {
+          type: "mrkdwn",
+          text: `Report generated at ${moment()
+            .tz("Asia/Kolkata")
+            .format("HH:mm")} IST`,
+        },
+      ],
+    });
+
+    return blocks;
+  }
+
+  _buildMessage(analysis, date) {
+    const parts = [];
+    const dateStr = moment(date).format("dddd, MMMM D, YYYY");
+
+    if (analysis.isMissing) {
+      parts.push(
+        `🔔 *Missing Hours Alert*\nYou logged ${analysis.totalHours} hours on ${dateStr}. Required: ${analysis.missingHours} more hours.`
+      );
+    }
+
+    if (analysis.suspiciousEntries) {
+      analysis.suspiciousEntries.forEach((entry) => {
+        if (entry.type === "long_duration") {
+          parts.push(
+            `⚠️ *Long Duration Entry*\nAn entry on ${dateStr} is ${entry.duration.toFixed(
+              1
+            )} hours long.`
+          );
+        } else if (entry.type === "large_gap") {
+          parts.push(
+            `⚠️ *Large Gap Detected*\nThere's a ${entry.gap.toFixed(
+              1
+            )} hour gap between entries on ${dateStr}.`
+          );
+        }
+      });
+    }
+
+    return parts.join("\n\n");
+  }
+
+  _buildBlocks(analysis, date) {
+    const blocks = [];
+    const dateStr = moment(date).format("dddd, MMMM D, YYYY");
+
+    // Header
+    blocks.push({
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: `Time Entry Review for ${dateStr}`,
+        emoji: true,
+      },
+    });
+
+    // Summary section
+    blocks.push({
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: `*Hours Logged:*\n${analysis.totalHours}`,
+        },
+        {
+          type: "mrkdwn",
+          text: `*Status:*\n${
+            analysis.isMissing ? "❌ Incomplete" : "✅ Complete"
+          }`,
+        },
+      ],
+    });
+
+    // Missing hours alert
+    if (analysis.isMissing) {
+      blocks.push({
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `🔔 *Missing Hours Alert*\nYou need to log ${analysis.missingHours.toFixed(
+            1
+          )} more hours for this day.`,
+        },
+      });
+    }
+
+    // Suspicious entries
+    if (analysis.suspiciousEntries) {
+      analysis.suspiciousEntries.forEach((entry) => {
+        let text = "";
+        if (entry.type === "long_duration") {
+          text = `⚠️ *Long Duration Entry Detected*\n• Duration: ${entry.duration.toFixed(
+            1
+          )} hours\n• Description: ${
+            entry.entry.description || "No description"
+          }\n• Time: ${moment(entry.entry.start).format("HH:mm")} - ${moment(
+            entry.entry.end
+          ).format("HH:mm")}`;
+        } else if (entry.type === "large_gap") {
+          text = `⚠️ *Large Gap Detected*\n• Gap: ${entry.gap.toFixed(
+            1
+          )} hours\n• Between: ${moment(entry.before.end).format(
+            "HH:mm"
+          )} and ${moment(entry.after.start).format("HH:mm")}`;
+        }
+
+        blocks.push({
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text,
+          },
+        });
+      });
+    }
+
+    return blocks;
+  }
+}
+
+module.exports = SlackNotifier;
+
+================
+File: services/TimeAnalyzer.js
+================
+const moment = require("moment-timezone");
+const MonthlyAnalyzer = require("./analyzers/MonthlyAnalyzer");
+
+// Constants
+const IST_TIMEZONE = "Asia/Kolkata";
+const REQUIRED_HOURS = 8;
+const SUSPICIOUS_GAP_HOURS = 4;
+const SUSPICIOUS_DURATION_HOURS = 10;
+
+class TimeAnalyzer {
+  constructor() {
+    this.monthlyAnalyzer = new MonthlyAnalyzer();
+  }
+
+  analyzeEntries(entries, date) {
+    if (!entries || entries.length === 0) {
+      return {
+        totalHours: 0,
+        isMissing: true,
+        missingHours: REQUIRED_HOURS,
+        suspiciousEntries: null,
+      };
+    }
+
+    // Sort entries by start time
+    const sortedEntries = [...entries].sort(
+      (a, b) => moment(a.start).valueOf() - moment(b.start).valueOf()
+    );
+
+    let totalHours = 0;
+    let suspiciousEntries = [];
+
+    // Debug log for entries analysis
+    console.log("Analyzing entries:", {
+      totalEntries: entries.length,
+      sortedEntries: sortedEntries.map((e) => ({
+        start: moment(e.start).format(),
+        end: moment(e.end).format(),
+        duration: moment
+          .duration(moment(e.end).diff(moment(e.start)))
+          .asHours(),
+        description: e.description,
+      })),
+    });
+
+    // Analyze each entry
+    sortedEntries.forEach((entry, index) => {
+      const start = moment(entry.start);
+      const end = moment(entry.end);
+      const duration = moment.duration(end.diff(start)).asHours();
+
+      console.log(`Entry ${index + 1} analysis:`, {
+        start: start.format(),
+        end: end.format(),
+        duration,
+        runningTotal: totalHours + duration,
+      });
+
+      // Add to total hours
+      totalHours += duration;
+
+      // Check for suspiciously long entries
+      if (duration > SUSPICIOUS_DURATION_HOURS) {
+        suspiciousEntries.push({
+          type: "long_duration",
+          entry,
+          duration,
+          startTime: start.format("HH:mm"),
+          endTime: end.format("HH:mm"),
+        });
+      }
+
+      // Check for suspicious gaps between entries
+      if (index > 0) {
+        const prevEnd = moment(sortedEntries[index - 1].end);
+        const gap = moment.duration(start.diff(prevEnd)).asHours();
+
+        if (gap > SUSPICIOUS_GAP_HOURS) {
+          suspiciousEntries.push({
+            type: "large_gap",
+            before: sortedEntries[index - 1],
+            after: entry,
+            gap,
+            gapStartTime: prevEnd.format("HH:mm"),
+            gapEndTime: start.format("HH:mm"),
+          });
+        }
+      }
+    });
+
+    // Check for insufficient total hours (only if some hours were logged)
+    if (totalHours > 0 && totalHours < REQUIRED_HOURS) {
+      suspiciousEntries.push({
+        type: "insufficient_hours",
+        totalHours,
+        missingHours: REQUIRED_HOURS - totalHours,
+      });
+    }
+
+    return {
+      totalHours: Math.round(totalHours * 100) / 100,
+      isMissing: totalHours === 0, // Changed to only true when no hours logged
+      missingHours: Math.max(0, REQUIRED_HOURS - totalHours),
+      suspiciousEntries:
+        suspiciousEntries.length > 0 ? suspiciousEntries : null,
+    };
+  }
+
+  calculateTotalHours(entries) {
+    if (!entries || entries.length === 0) {
+      return 0;
+    }
+
+    return entries.reduce((total, entry) => {
+      const start = moment(entry.start);
+      const end = moment(entry.end);
+      const duration = moment.duration(end.diff(start));
+      return total + duration.asHours();
+    }, 0);
+  }
+
+  analyzeMonthlyEntries(entries, user) {
+    return this.monthlyAnalyzer.analyzeEntries(entries, user);
+  }
+
+  groupByTeam(results, teams) {
+    const teamResults = {
+      teams: {},
+      grandTotal: 0,
+    };
+
+    // Initialize teams
+    Object.entries(teams).forEach(([teamId, team]) => {
+      teamResults.teams[teamId] = {
+        name: team.name,
+        totalHours: 0,
+        members: [],
+      };
+    });
+
+    // Group results by team
+    results.forEach((result) => {
+      const team = result.team;
+      if (team && teamResults.teams[team]) {
+        teamResults.teams[team].members.push({
+          name: result.user,
+          hours: result.totalHours || 0,
+        });
+        teamResults.teams[team].totalHours += result.totalHours || 0;
+        teamResults.grandTotal += result.totalHours || 0;
+      }
+    });
+
+    // Round all numbers
+    teamResults.grandTotal = Math.round(teamResults.grandTotal * 100) / 100;
+    Object.values(teamResults.teams).forEach((team) => {
+      team.totalHours = Math.round(team.totalHours * 100) / 100;
+      team.members.forEach((member) => {
+        member.hours = Math.round(member.hours * 100) / 100;
+      });
+    });
+
+    return teamResults;
+  }
+}
+
+module.exports = new TimeAnalyzer();
+
+================
+File: .gitignore
+================
+# Dependencies
+node_modules/
+package-lock.json
+
+# Testing
+coverage/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+================
+File: index.js
+================
+const moment = require("moment-timezone");
+const ClockifyClient = require("./services/ClockifyClient");
+const timeAnalyzer = require("./services/TimeAnalyzer");
+const SlackNotifier = require("./services/SlackNotifier");
+const UserConfig = require("./config/UserConfig");
+
+// Constants
+const IST_TIMEZONE = "Asia/Kolkata";
+
+// Initialize clients
+const clockify = new ClockifyClient(process.env.CLOCKIFY_API_KEY);
+const slack = new SlackNotifier(
+  process.env.SLACK_BOT_TOKEN,
+  process.env.SLACK_CHANNEL_ID
+);
+const userConfig = new UserConfig(process.env.USERS);
+
+exports.handler = async (event) => {
+  try {
+    console.log("Event:", JSON.stringify(event));
+
+    // Check if this is a monthly report
+    const isMonthlyReport = event?.reportType === "monthly";
+
+    // Calculate the time range
+    let startTime, endTime, previousWorkday, weekNumber;
+    if (isMonthlyReport) {
+      // For monthly report, get data from start of month to current week
+      const now = event.testDate
+        ? moment(event.testDate).tz("Asia/Kolkata")
+        : moment().tz("Asia/Kolkata");
+      startTime = now.clone().startOf("month");
+
+      // Calculate week number (1-5) within the month
+      weekNumber = Math.ceil(now.date() / 7);
+
+      // End time should be end of the current date to include all entries
+      const monthEnd = now.clone().endOf("month");
+      endTime = moment.min(monthEnd, now.clone().endOf("day"));
+
+      // Calculate working days in this period
+      const holidays = (event.env?.HOLIDAYS || process.env.HOLIDAYS || "")
+        .split(",")
+        .map((d) => d.trim());
+      const workingDays = getWorkingDaysCount(startTime, endTime, holidays);
+
+      console.log("Monthly report timing details:", {
+        testDate: event.testDate || "none",
+        startTimeIST: startTime.format("YYYY-MM-DD HH:mm:ss Z"),
+        endTimeIST: endTime.format("YYYY-MM-DD HH:mm:ss Z"),
+        startTimeUTC: startTime.utc().format("YYYY-MM-DD HH:mm:ss Z"),
+        endTimeUTC: endTime.utc().format("YYYY-MM-DD HH:mm:ss Z"),
+        workingDays,
+        holidays,
+      });
+
+      previousWorkday = now;
+    } else {
+      // For daily report, get previous working day's data
+      previousWorkday = getPreviousWorkday(
+        moment().tz(IST_TIMEZONE),
+        (process.env.HOLIDAYS || "").split(",").map((d) => d.trim())
+      );
+
+      // Keep IST date for business logic but use UTC boundaries for API
+      const istDate = previousWorkday.clone();
+      startTime = istDate.clone().utc().startOf("day");
+      endTime = istDate.clone().utc().endOf("day");
+    }
+
+    console.log("Checking time entries:", {
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      isMonthlyReport,
+    });
+
+    // Get users based on report type
+    const users = isMonthlyReport
+      ? userConfig.getAllUsers() // Get all users for monthly report
+      : userConfig.getEnabledUsers(); // Get only enabled users for daily report
+
+    console.log("Selected users for report:", {
+      totalUsers: users.length,
+      teamCounts: users.reduce((acc, user) => {
+        acc[user.team] = (acc[user.team] || 0) + 1;
+        return acc;
+      }, {}),
+      teamCharlieUsers: users
+        .filter((user) => user.team === "teamCharlie")
+        .map((u) => u.name),
+    });
+
+    // Get workspace ID
+    const workspaces = await clockify.getWorkspaces();
+    const workspaceId = workspaces[0].id;
+
+    console.log("Using workspace:", {
+      id: workspaceId,
+      users: users.length,
+      reportType: isMonthlyReport ? "monthly" : "daily",
+    });
+
+    // Process users in batches to respect rate limits
+    const batchSize = 5;
+    const results = [];
+
+    for (let i = 0; i < users.length; i += batchSize) {
+      const userBatch = users.slice(i, i + batchSize);
+      console.log(
+        `Processing batch ${i / batchSize + 1} of ${Math.ceil(
+          users.length / batchSize
+        )}`
+      );
+
+      const batchResults = await Promise.all(
+        userBatch.map(async (user) => {
+          try {
+            // Get time entries
+            const entries = await clockify.getTimeEntries(
+              workspaceId,
+              user.id,
+              startTime,
+              endTime
+            );
+
+            // Format entries for analysis
+            const formattedEntries = entries.map((e) => ({
+              start: e.timeInterval.start,
+              end: e.timeInterval.end,
+              description: e.description || "",
+              project: e.project ? e.project.name : "",
+              task: e.task ? e.task.name : "",
+            }));
+
+            // Analyze entries
+            const analysis = timeAnalyzer.analyzeEntries(
+              formattedEntries,
+              previousWorkday
+            );
+
+            return {
+              user: user.name,
+              email: user.email,
+              team: user.team,
+              ...analysis,
+              entries: formattedEntries,
+            };
+          } catch (error) {
+            console.error(`Error checking user ${user.name}:`, error);
+            return {
+              user: user.name,
+              error: error.message,
+            };
+          }
+        })
+      );
+
+      results.push(...batchResults);
+
+      // Small delay between batches to respect rate limits
+      if (i + batchSize < users.length) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    // Debug log final results before Slack
+    console.log(
+      "DEBUG - Final results before Slack:",
+      results.map((r) => ({
+        user: r.user,
+        totalHours: r.totalHours,
+        isMissing: r.isMissing,
+        missingHours: r.missingHours,
+      }))
+    );
+
+    // Send notification based on report type
+    if (isMonthlyReport) {
+      // Group results by team before sending monthly report
+      const teams = userConfig.getTeams();
+      const groupedResults = timeAnalyzer.groupByTeam(results, teams);
+
+      // Calculate total expected hours for the period
+      const holidays = (event.env?.HOLIDAYS || process.env.HOLIDAYS || "")
+        .split(",")
+        .map((d) => d.trim());
+
+      // Use the same date object we used for calculations
+      const reportDate = event.testDate
+        ? moment(event.testDate).tz("Asia/Kolkata")
+        : moment().tz("Asia/Kolkata");
+
+      // Recalculate the date range for this month
+      const monthStart = reportDate.clone().startOf("month");
+      const monthEnd = reportDate.clone().endOf("month");
+      const currentDate = reportDate.clone();
+      const finalEndDate = moment.min(monthEnd, currentDate);
+
+      const workingDays = getWorkingDaysCount(
+        monthStart,
+        finalEndDate,
+        holidays
+      );
+      const expectedHoursPerDay = 8; // Standard working hours per day
+      const totalExpectedHours = workingDays * expectedHoursPerDay;
+
+      console.log("Expected hours calculation:", {
+        reportMonth: reportDate.format("MMMM YYYY"),
+        startDate: monthStart.format("YYYY-MM-DD"),
+        endDate: finalEndDate.format("YYYY-MM-DD"),
+        holidays: holidays,
+        workingDays: workingDays,
+        totalExpectedHours: totalExpectedHours,
+      });
+
+      // Send monthly report to Slack with expected hours using the correct date
+      await slack.notifyMonthly(groupedResults, reportDate, totalExpectedHours);
+    } else {
+      // Send daily report to Slack
+      await slack.notifyBulk(results, previousWorkday);
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: isMonthlyReport
+          ? `Time Entry Summary for ${startTime.format(
+              "MMMM YYYY"
+            )} (Week ${weekNumber})`
+          : "Daily time entry check completed",
+        date: previousWorkday.format("YYYY-MM-DD"),
+        dayOfWeek: previousWorkday.format("dddd"),
+        checkPeriod: {
+          start: startTime.toISOString(),
+          end: endTime.toISOString(),
+        },
+        results,
+      }),
+    };
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: "Error in Time Warden",
+        error: error.message,
+      }),
+    };
+  }
+};
+
+async function checkIfWorkingDay(date, holidays) {
+  const dayOfWeek = date.day();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+  if (isWeekend) {
+    return {
+      shouldProcess: false,
+      reason: "Weekend",
+      isWeekend: true,
+      isHoliday: false,
+    };
+  }
+
+  const dateStr = date.format("YYYY-MM-DD");
+  const isHoliday = holidays.includes(dateStr);
+
+  if (isHoliday) {
+    return {
+      shouldProcess: false,
+      reason: "Holiday",
+      isWeekend: false,
+      isHoliday: true,
+    };
+  }
+
+  return {
+    shouldProcess: true,
+    reason: "Working Day",
+    isWeekend: false,
+    isHoliday: false,
+  };
+}
+
+function getPreviousWorkday(date, holidays) {
+  let previousDay = date.clone().subtract(1, "days");
+  let attempts = 0; // Add safety counter to prevent infinite loops
+  const maxAttempts = 10; // Maximum number of days to look back
+
+  while (
+    (previousDay.day() === 0 || // Sunday
+      previousDay.day() === 6 || // Saturday
+      holidays.includes(previousDay.format("YYYY-MM-DD"))) &&
+    attempts < maxAttempts
+  ) {
+    previousDay.subtract(1, "days");
+    attempts++;
+  }
+
+  console.log("getPreviousWorkday details:", {
+    startDate: date.format("YYYY-MM-DD"),
+    foundPreviousDay: previousDay.format("YYYY-MM-DD"),
+    attempts: attempts,
+    isWeekend: previousDay.day() === 0 || previousDay.day() === 6,
+    isHoliday: holidays.includes(previousDay.format("YYYY-MM-DD")),
+  });
+
+  return previousDay;
+}
+
+function getWorkingDaysCount(startDate, endDate, holidays) {
+  let count = 0;
+  let current = startDate.clone();
+
+  while (current.isSameOrBefore(endDate, "day")) {
+    // Check if it's not a weekend and not a holiday
+    if (
+      current.day() !== 0 &&
+      current.day() !== 6 &&
+      !holidays.includes(current.format("YYYY-MM-DD"))
+    ) {
+      count++;
+    }
+    current.add(1, "day");
+  }
+  return count;
+}
+
+================
+File: README.md
+================
+# Time Variance Authority (TVA)
+
+<p align="center">
+  <img src="timeVarianceAuthority.png" alt="Time Variance Authority">
+</p>
+
+## 📺 Introduction
+
+Welcome to the Time Variance Authority (TVA) — the watchdog of time tracking! This automated system ensures that no Clockify entries go missing and keeps an eye out for any unusual time anomalies.
+
+With automated updates delivered straight from the Clockify API to Slack, TVA helps maintain transparency and accountability across the timeline. Whether it's a missed entry or a suspicious log, we've got it covered.
+
+## ✨ Purpose
+
+- Detect and highlight missing Clockify entries
+- Identify and flag suspicious time entries for review
+- Ensure everyone's timeline stays clean and accurate
+- Provide daily and monthly reporting through Slack
+
+## 🛠 Technical Overview
+
+### Architecture
+
+- AWS Lambda Functions
+- Clockify API Integration
+- Slack Notifications
+- Node.js Runtime
+
+### Scheduled Runs
+
+- **Daily Check**: Runs at 4:30 AM (Mon-Fri)
+- **Monthly Report**: Runs at 11:30 AM (Every Monday)
+
+## 👥 The Time Keepers
+
+- Yash Vekaria
+- Harish Vaja
+
+## 📋 Time Keeper Ordinance
+
+### 🕒 Time Requirements
+
+- Minimum 8 hours per working day required
+- Previous working day is checked daily
+- Gaps greater than 4 hours trigger alerts
+- Single entries longer than 10 hours are flagged as suspicious
+
+### 📅 Working Days
+
+- Monday to Friday only
+- Weekends (Saturday & Sunday) excluded
+- Configurable holidays excluded
+
+### 🔔 Monitoring & Alerts
+
+The system monitors for:
+
+- Missing hours (less than 8 hours/day)
+- Long duration entries (exceeding 10 hours)
+- Large gaps (more than 4 hours between entries)
+- Overlapping time entries
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+- `CLOCKIFY_API_KEY`: Your Clockify API key
+- `SLACK_BOT_TOKEN`: Slack bot token for notifications
+- `SLACK_CHANNEL_ID`: Target Slack channel for notifications
+- `HOLIDAYS`: Comma-separated list of holidays in YYYY-MM-DD format
+- `USERS`: JSON string containing user configurations
+
+## 🎯 Features
+
+### Daily Reports
+
+- Automated checks for the previous working day
+- Individual time entry analysis
+- Immediate Slack notifications for discrepancies
+
+### Monthly Reports
+
+- Comprehensive team-wise summaries
+- Total hours tracked per team
+- Progress tracking against expected hours
+
+## 🔄 Workflow
+
+1. Fetches time entries from Clockify
+2. Analyzes entries for discrepancies
+3. Groups data by teams when needed
+4. Sends formatted reports to Slack
+5. Handles rate limiting and error recovery
+
+## 🚀 "For all time, always."
+
+TVA ensures temporal compliance in time tracking, maintaining order across all timelines!
+
+
+
+================================================================
+End of Codebase
+================================================================
