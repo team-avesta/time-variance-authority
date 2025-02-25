@@ -16,6 +16,10 @@ coverage/
 *.swp
 *.swo
 
+#misc
+lambda.zip
+dist
+
 # Logs
 logs
 *.log
