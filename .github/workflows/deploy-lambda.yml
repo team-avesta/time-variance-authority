@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  LAMBDA_FUNCTION_NAME: time-warden
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -49,12 +52,12 @@ jobs:
         run: |
           echo "Starting deployment..."
           # Store the current version for potential rollback
-          CURRENT_VERSION=$(aws lambda get-function --function-name time-variance-authority --query 'Configuration.Version' --output text)
+          CURRENT_VERSION=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --query 'Configuration.Version' --output text)
           echo "Current function version: $CURRENT_VERSION"
 
           # Deploy new version
           aws lambda update-function-code \
-            --function-name time-variance-authority \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
             --zip-file fileb://lambda.zip
 
       - name: Verify Deployment
@@ -63,7 +66,7 @@ jobs:
           sleep 10
 
           # Get function state and configuration
-          FUNCTION_INFO=$(aws lambda get-function --function-name time-variance-authority)
+          FUNCTION_INFO=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }})
           FUNCTION_STATE=$(echo $FUNCTION_INFO | jq -r '.Configuration.State')
           LAST_UPDATE=$(echo $FUNCTION_INFO | jq -r '.Configuration.LastModified')
           CODE_SIZE=$(echo $FUNCTION_INFO | jq -r '.Configuration.CodeSize')
@@ -83,12 +86,12 @@ jobs:
           if [[ -n "${{ env.current_version }}" ]]; then
             echo "Deployment failed, rolling back to version ${{ env.current_version }}"
             aws lambda update-function-code \
-              --function-name time-variance-authority \
+              --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
               --revision ${{ env.current_version }}
             
             # Verify rollback
             ROLLBACK_STATE=$(aws lambda get-function \
-              --function-name time-variance-authority \
+              --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
               --query 'Configuration.State' \
               --output text)
             
