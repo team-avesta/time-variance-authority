@@ -12,6 +12,8 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      CURRENT_VERSION: '' # Job level environment variable
 
     steps:
       - name: Checkout code
@@ -51,11 +53,13 @@ jobs:
       - name: Get Current Published Version
         id: get_current_version
         run: |
+          # Get current version and store in both env and file
           CURRENT_VERSION=$(aws lambda get-function \
             --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
             --query 'Configuration.Version' \
             --output text)
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+          echo "$CURRENT_VERSION" > current_version.txt
           echo "Current published version: $CURRENT_VERSION"
 
       - name: Deploy New Code
@@ -137,18 +141,45 @@ jobs:
       - name: Rollback on Failure
         if: failure()
         run: |
-          echo "Deployment failed. Rolling back alias to previous version ${{ env.CURRENT_VERSION }}"
-          aws lambda update-alias \
-            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-            --name ${{ env.ALIAS_NAME }} \
-            --function-version ${{ env.CURRENT_VERSION }}
-          ROLLBACK_STATE=$(aws lambda get-function \
-            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-            --query 'Configuration.State' \
-            --output text)
-          echo "Rollback state: $ROLLBACK_STATE"
-          if [ "$ROLLBACK_STATE" != "Active" ]; then
-            echo "Error: Rollback failed, manual intervention required"
+          echo "Deployment failed. Attempting rollback..."
+
+          # Try to get version from environment variable first
+          ROLLBACK_VERSION="${CURRENT_VERSION}"
+
+          # If env var is empty, try to read from file
+          if [ -z "$ROLLBACK_VERSION" ] && [ -f "current_version.txt" ]; then
+            ROLLBACK_VERSION=$(cat current_version.txt)
+          fi
+
+          # If we still don't have a version, get the latest published version
+          if [ -z "$ROLLBACK_VERSION" ]; then
+            echo "No previous version found in env or file, getting latest published version..."
+            ROLLBACK_VERSION=$(aws lambda get-alias \
+              --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+              --name ${{ env.ALIAS_NAME }} \
+              --query 'FunctionVersion' \
+              --output text || echo "1")
+          fi
+
+          if [ -n "$ROLLBACK_VERSION" ]; then
+            echo "Rolling back alias to version $ROLLBACK_VERSION"
+            aws lambda update-alias \
+              --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+              --name ${{ env.ALIAS_NAME }} \
+              --function-version "$ROLLBACK_VERSION"
+            
+            ROLLBACK_STATE=$(aws lambda get-function \
+              --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+              --query 'Configuration.State' \
+              --output text)
+              
+            echo "Rollback state: $ROLLBACK_STATE"
+            if [ "$ROLLBACK_STATE" != "Active" ]; then
+              echo "Error: Rollback failed, manual intervention required"
+              exit 1
+            fi
+            echo "Rollback completed successfully"
+          else
+            echo "Error: Could not determine version for rollback. Manual intervention required."
             exit 1
           fi
-          echo "Rollback completed successfully"
