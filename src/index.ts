@@ -1,5 +1,4 @@
 import moment from 'moment-timezone';
-import { ClockifyClient } from './services/ClockifyClient';
 import timeAnalyzer, {
   AnalysisResult as TimeAnalyzerResult,
 } from './services/TimeAnalyzer';
