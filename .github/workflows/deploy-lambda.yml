@@ -7,6 +7,7 @@ on:
 
 env:
   LAMBDA_FUNCTION_NAME: time-warden
+  ALIAS_NAME: production
 
 jobs:
   deploy:
@@ -47,58 +48,57 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy to Lambda
-        id: deploy
+      - name: Get Current Published Version
+        id: get_current_version
         run: |
-          echo "Starting deployment..."
-          # Store the current version for potential rollback
           CURRENT_VERSION=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --query 'Configuration.Version' --output text)
-          echo "Current function version: $CURRENT_VERSION"
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+          echo "Current published version: $CURRENT_VERSION"
 
-          # Deploy new version
-          aws lambda update-function-code \
-            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-            --zip-file fileb://lambda.zip
+      - name: Deploy New Code
+        id: deploy_new_code
+        run: |
+          echo "Updating function code..."
+          aws lambda update-function-code --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --zip-file fileb://lambda.zip
+
+      - name: Publish New Version
+        id: publish_version
+        run: |
+          NEW_VERSION=$(aws lambda publish-version --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --query 'Version' --output text)
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "Published new version: $NEW_VERSION"
+
+      - name: Update Alias to New Version
+        id: update_alias
+        run: |
+          echo "Updating alias ${{ env.ALIAS_NAME }} to point to version $NEW_VERSION"
+          aws lambda update-alias --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --name ${{ env.ALIAS_NAME }} --function-version $NEW_VERSION
 
       - name: Verify Deployment
         run: |
           echo "Waiting for function update to complete..."
           sleep 10
-
-          # Get function state and configuration
           FUNCTION_INFO=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }})
           FUNCTION_STATE=$(echo $FUNCTION_INFO | jq -r '.Configuration.State')
           LAST_UPDATE=$(echo $FUNCTION_INFO | jq -r '.Configuration.LastModified')
           CODE_SIZE=$(echo $FUNCTION_INFO | jq -r '.Configuration.CodeSize')
-
           echo "Function State: $FUNCTION_STATE"
           echo "Last Updated: $LAST_UPDATE"
           echo "Code Size: $CODE_SIZE bytes"
-
           if [ "$FUNCTION_STATE" != "Active" ]; then
-            echo "Error: Function is not in Active state"
+            echo "Error: Function is not Active"
             exit 1
           fi
 
       - name: Rollback on Failure
         if: failure()
         run: |
-          if [[ -n "${{ env.current_version }}" ]]; then
-            echo "Deployment failed, rolling back to version ${{ env.current_version }}"
-            aws lambda update-function-code \
-              --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-              --revision ${{ env.current_version }}
-            
-            # Verify rollback
-            ROLLBACK_STATE=$(aws lambda get-function \
-              --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-              --query 'Configuration.State' \
-              --output text)
-            
-            echo "Rollback state: $ROLLBACK_STATE"
-            if [ "$ROLLBACK_STATE" != "Active" ]; then
-              echo "Error: Rollback failed, manual intervention required"
-              exit 1
-            fi
-            echo "Rollback completed successfully"
+          echo "Deployment failed. Rolling back alias to previous version ${{ env.CURRENT_VERSION }}"
+          aws lambda update-alias --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --name ${{ env.ALIAS_NAME }} --function-version ${{ env.CURRENT_VERSION }}
+          ROLLBACK_STATE=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --query 'Configuration.State' --output text)
+          echo "Rollback state: $ROLLBACK_STATE"
+          if [ "$ROLLBACK_STATE" != "Active" ]; then
+            echo "Error: Rollback failed, manual intervention required"
+            exit 1
           fi
+          echo "Rollback completed successfully"
