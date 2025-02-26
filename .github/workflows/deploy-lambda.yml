@@ -84,25 +84,53 @@ jobs:
       - name: Update Alias to New Version
         id: update_alias
         run: |
-          echo "Updating alias ${{ env.ALIAS_NAME }} to point to version $NEW_VERSION"
-          aws lambda update-alias \
-            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-            --name ${{ env.ALIAS_NAME }} \
-            --function-version $NEW_VERSION
+          echo "Updating alias ${{ env.ALIAS_NAME }} to point to version ${{ env.NEW_VERSION }}"
+
+          # Check if alias exists
+          if ! aws lambda get-alias --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --name ${{ env.ALIAS_NAME }} 2>/dev/null; then
+            echo "Alias does not exist. Creating new alias..."
+            aws lambda create-alias \
+              --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+              --name ${{ env.ALIAS_NAME }} \
+              --function-version ${{ env.NEW_VERSION }}
+          else
+            echo "Alias exists. Updating..."
+            aws lambda update-alias \
+              --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+              --name ${{ env.ALIAS_NAME }} \
+              --function-version ${{ env.NEW_VERSION }}
+          fi
 
       - name: Verify Deployment
         run: |
           echo "Waiting a bit to verify..."
           sleep 10
+
+          # Verify function state
           FUNCTION_INFO=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }})
           FUNCTION_STATE=$(echo $FUNCTION_INFO | jq -r '.Configuration.State')
           LAST_UPDATE=$(echo $FUNCTION_INFO | jq -r '.Configuration.LastModified')
           CODE_SIZE=$(echo $FUNCTION_INFO | jq -r '.Configuration.CodeSize')
+
+          # Verify alias points to correct version
+          ALIAS_VERSION=$(aws lambda get-alias \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --name ${{ env.ALIAS_NAME }} \
+            --query 'FunctionVersion' \
+            --output text)
+
           echo "Function State: $FUNCTION_STATE"
           echo "Last Updated: $LAST_UPDATE"
           echo "Code Size: $CODE_SIZE bytes"
+          echo "Alias Version: $ALIAS_VERSION"
+
           if [ "$FUNCTION_STATE" != "Active" ]; then
             echo "Error: Function is not Active"
+            exit 1
+          fi
+
+          if [ "$ALIAS_VERSION" != "${{ env.NEW_VERSION }}" ]; then
+            echo "Error: Alias is not pointing to the new version"
             exit 1
           fi
 
