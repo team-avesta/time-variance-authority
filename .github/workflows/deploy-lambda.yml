@@ -51,7 +51,10 @@ jobs:
       - name: Get Current Published Version
         id: get_current_version
         run: |
-          CURRENT_VERSION=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --query 'Configuration.Version' --output text)
+          CURRENT_VERSION=$(aws lambda get-function \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --query 'Configuration.Version' \
+            --output text)
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
           echo "Current published version: $CURRENT_VERSION"
 
@@ -59,12 +62,22 @@ jobs:
         id: deploy_new_code
         run: |
           echo "Updating function code..."
-          aws lambda update-function-code --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --zip-file fileb://lambda.zip
+          aws lambda update-function-code \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --zip-file fileb://lambda.zip
+
+      - name: Wait for Code Update
+        run: |
+          echo "Waiting for function update to complete..."
+          aws lambda wait function-updated --function-name ${{ env.LAMBDA_FUNCTION_NAME }}
 
       - name: Publish New Version
         id: publish_version
         run: |
-          NEW_VERSION=$(aws lambda publish-version --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --query 'Version' --output text)
+          NEW_VERSION=$(aws lambda publish-version \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --query 'Version' \
+            --output text)
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "Published new version: $NEW_VERSION"
 
@@ -72,11 +85,14 @@ jobs:
         id: update_alias
         run: |
           echo "Updating alias ${{ env.ALIAS_NAME }} to point to version $NEW_VERSION"
-          aws lambda update-alias --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --name ${{ env.ALIAS_NAME }} --function-version $NEW_VERSION
+          aws lambda update-alias \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --name ${{ env.ALIAS_NAME }} \
+            --function-version $NEW_VERSION
 
       - name: Verify Deployment
         run: |
-          echo "Waiting for function update to complete..."
+          echo "Waiting a bit to verify..."
           sleep 10
           FUNCTION_INFO=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }})
           FUNCTION_STATE=$(echo $FUNCTION_INFO | jq -r '.Configuration.State')
@@ -94,8 +110,14 @@ jobs:
         if: failure()
         run: |
           echo "Deployment failed. Rolling back alias to previous version ${{ env.CURRENT_VERSION }}"
-          aws lambda update-alias --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --name ${{ env.ALIAS_NAME }} --function-version ${{ env.CURRENT_VERSION }}
-          ROLLBACK_STATE=$(aws lambda get-function --function-name ${{ env.LAMBDA_FUNCTION_NAME }} --query 'Configuration.State' --output text)
+          aws lambda update-alias \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --name ${{ env.ALIAS_NAME }} \
+            --function-version ${{ env.CURRENT_VERSION }}
+          ROLLBACK_STATE=$(aws lambda get-function \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --query 'Configuration.State' \
+            --output text)
           echo "Rollback state: $ROLLBACK_STATE"
           if [ "$ROLLBACK_STATE" != "Active" ]; then
             echo "Error: Rollback failed, manual intervention required"
