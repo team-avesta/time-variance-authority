@@ -19,6 +19,7 @@ coverage/
 lambda.zip
 dist/
 */dist/
+**/dist/
 
 # Logs
 logs
