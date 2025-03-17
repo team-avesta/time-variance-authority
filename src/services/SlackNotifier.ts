@@ -26,24 +26,6 @@ export class SlackNotifier {
     this.monthlyFormatter = new MonthlyFormatter();
   }
 
-  async notifyChannel(analysis: Analysis, date: Date | string): Promise<any> {
-    try {
-      const message = this._buildMessage(analysis, date);
-      if (!message) return null; // No issues to report
-
-      const response = await this.client.chat.postMessage({
-        channel: this.channelId,
-        text: message,
-        blocks: this._buildBlocks(analysis, date),
-      });
-
-      return response;
-    } catch (error) {
-      console.error('Error sending Slack notification:', error);
-      throw error;
-    }
-  }
-
   async notifyBulk(
     results: AnalysisResult[],
     date: Date | string
@@ -187,107 +169,6 @@ export class SlackNotifier {
         },
       ],
     });
-
-    return blocks;
-  }
-
-  private _buildMessage(
-    analysis: Analysis,
-    date: Date | string
-  ): string | null {
-    const parts = [];
-    const dateStr = moment(date).format('dddd, MMMM D, YYYY');
-
-    if (analysis.isMissing && analysis.missingHours !== undefined) {
-      parts.push(
-        `🔔 *Missing Hours Alert*\nYou logged ${analysis.totalHours} hours on ${dateStr}. Required: ${analysis.missingHours} more hours.`
-      );
-    }
-
-    if (analysis.suspiciousEntries) {
-      analysis.suspiciousEntries.forEach((entry) => {
-        if (entry.type === 'long_duration' && entry.duration !== undefined) {
-          parts.push(
-            `⚠️ *Long Duration Entry*\nAn entry on ${dateStr} is ${entry.duration.toFixed(
-              1
-            )} hours long.`
-          );
-        } else if (entry.type === 'large_gap' && entry.gap !== undefined) {
-          parts.push(
-            `⚠️ *Large Gap Detected*\nThere's a ${entry.gap.toFixed(
-              1
-            )} hour gap between entries on ${dateStr}.`
-          );
-        }
-      });
-    }
-
-    return parts.length > 0 ? parts.join('\n\n') : null;
-  }
-
-  private _buildBlocks(analysis: Analysis, date: Date | string): any[] {
-    const blocks = [];
-    const dateStr = moment(date).format('dddd, MMMM D, YYYY');
-
-    // Header
-    blocks.push({
-      type: 'header',
-      text: {
-        type: 'plain_text',
-        text: `Time Entry Review for ${dateStr}`,
-        emoji: true,
-      },
-    });
-
-    // Summary section
-    blocks.push({
-      type: 'section',
-      fields: [
-        {
-          type: 'mrkdwn',
-          text: `*Hours Logged:*\n${analysis.totalHours}`,
-        },
-        {
-          type: 'mrkdwn',
-          text: `*Status:*\n${
-            analysis.isMissing ? '❌ Incomplete' : '✅ Complete'
-          }`,
-        },
-      ],
-    });
-
-    // Missing hours alert
-    if (analysis.isMissing && analysis.missingHours !== undefined) {
-      blocks.push({
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `🔔 *Missing Hours Alert*\nYou need to log ${analysis.missingHours.toFixed(
-            1
-          )} more hours for this day.`,
-        },
-      });
-    }
-
-    // Suspicious entries
-    if (analysis.suspiciousEntries) {
-      analysis.suspiciousEntries.forEach((entry) => {
-        if (entry.type === 'long_duration' && entry.duration !== undefined) {
-          const text = `⚠️ *Long Duration Entry Detected*\n• Duration: ${entry.duration.toFixed(
-            1
-          )} hours\n• Description: ${
-            entry.entry?.description || 'No description'
-          }`;
-          blocks.push({
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text,
-            },
-          });
-        }
-      });
-    }
 
     return blocks;
   }

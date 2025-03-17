@@ -38,14 +38,6 @@ class UserConfig {
     return this.users.filter((user) => user.checkEnabled);
   }
 
-  getUserById(id: string): User | undefined {
-    return this.users.find((user) => user.id === id);
-  }
-
-  getUsersByTeam(team: string): User[] {
-    return this.users.filter((user) => user.team === team);
-  }
-
   getTeams(): Teams {
     return this.teams;
   }

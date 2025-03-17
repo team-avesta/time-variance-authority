@@ -1,7 +1,12 @@
 import moment from 'moment-timezone';
-import { MonthlyAnalyzer } from './analyzers/MonthlyAnalyzer';
-import { TimeEntry } from './analyzers/BaseAnalyzer';
-import { User } from '../config/UserConfig';
+
+export interface TimeEntry {
+  start: string;
+  end: string;
+  description?: string;
+  project?: string;
+  task?: string;
+}
 
 // Constants
 const REQUIRED_HOURS = 8;
@@ -56,10 +61,8 @@ interface Teams {
 }
 
 class TimeAnalyzer {
-  private monthlyAnalyzer: MonthlyAnalyzer;
-
   constructor() {
-    this.monthlyAnalyzer = new MonthlyAnalyzer();
+    // Empty constructor
   }
 
   analyzeEntries(entries: TimeEntry[]): AnalysisResult {
@@ -154,23 +157,6 @@ class TimeAnalyzer {
       suspiciousEntries:
         suspiciousEntries.length > 0 ? suspiciousEntries : null,
     };
-  }
-
-  calculateTotalHours(entries: TimeEntry[]): number {
-    if (!entries || entries.length === 0) {
-      return 0;
-    }
-
-    return entries.reduce((total, entry) => {
-      const start = moment(entry.start);
-      const end = moment(entry.end);
-      const duration = moment.duration(end.diff(start));
-      return total + duration.asHours();
-    }, 0);
-  }
-
-  analyzeMonthlyEntries(entries: TimeEntry[], user: User) {
-    return this.monthlyAnalyzer.analyzeEntries(entries, user);
   }
 
   groupByTeam(results: any[], teams: Teams): TeamResults {
