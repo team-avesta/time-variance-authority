@@ -25,7 +25,7 @@ class UserConfig {
   constructor(usersEnv?: string) {
     const data: UserData = usersEnv
       ? JSON.parse(usersEnv)
-      : require(require('path').join(__dirname, './users.json'));
+      : require('../config/users.json');
     this.users = data.users || [];
     this.teams = data.teams || {};
   }
