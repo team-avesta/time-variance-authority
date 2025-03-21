@@ -54,6 +54,7 @@ export class ClockifyClient {
   private async processQueue(): Promise<void> {
     if (this.isProcessing) return;
     this.isProcessing = true;
+    console.log('Processing queue...');
 
     while (this.requestQueue.length > 0) {
       const { config, resolve, reject } = this.requestQueue.shift()!;
