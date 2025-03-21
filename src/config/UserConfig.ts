@@ -1,5 +1,3 @@
-import users from './users.json' assert { type: 'json' };
-
 export interface User {
   id: string;
   name: string;
@@ -25,7 +23,9 @@ class UserConfig {
   private teams: Teams;
 
   constructor(usersEnv?: string) {
-    const data: UserData = usersEnv ? JSON.parse(usersEnv) : users;
+    const data: UserData = usersEnv
+      ? JSON.parse(usersEnv)
+      : require(require('path').join(__dirname, './users.json'));
     this.users = data.users || [];
     this.teams = data.teams || {};
   }
