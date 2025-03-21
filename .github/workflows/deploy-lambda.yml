@@ -35,10 +35,16 @@ jobs:
       - name: Package Lambda
         run: |
           echo "Creating deployment package..."
-          cd dist
+          # Create a temporary directory for packaging
+          mkdir -p lambda-package
+          # Copy dist contents
+          cp -r dist/* lambda-package/
+          # Copy node_modules
+          cp -r node_modules lambda-package/
+          # Create zip from the package directory
+          cd lambda-package
           zip -r ../lambda.zip .
           cd ..
-          zip -r lambda.zip node_modules/
           echo "Package size: $(ls -lh lambda.zip | awk '{print $5}')"
 
       - name: Configure AWS Credentials
